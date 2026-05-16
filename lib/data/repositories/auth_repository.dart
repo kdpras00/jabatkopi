@@ -1,23 +1,27 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:jabatkopi/core/network/api_client.dart';
 import '../models/auth_model.dart';
 
 class AuthRepository {
-  final http.Client client;
+  final ApiClient apiClient;
 
-  AuthRepository({required this.client});
+  AuthRepository({required this.apiClient});
 
   Future<AuthModel> login(String username, String password) async {
-    final response = await client.post(
-      Uri.parse('https://api.jabatkopi.com/login'),
-      body: {'username': username, 'password': password},
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return AuthModel.fromJson(data);
-    } else {
-      throw Exception('Failed to login');
+    try {
+      final response = await apiClient.post('/auth/login', {
+        'username': username,
+        'password': password,
+      });
+      
+      final data = response['data'];
+      final authData = AuthModel.fromJson(data);
+      
+      // Auto-set token in ApiClient for subsequent requests
+      await apiClient.setToken(authData.token);
+      
+      return authData;
+    } catch (e) {
+      throw Exception('Login failed: $e');
     }
   }
 }

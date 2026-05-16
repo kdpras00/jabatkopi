@@ -39,7 +39,7 @@ func TestLoginHandler_Success(t *testing.T) {
 
 	assert.Equal(t, float64(200), response["status"])
 	assert.Equal(t, "Success", response["message"])
-	
+
 	data := response["data"].(map[string]interface{})
 	assert.NotEmpty(t, data["token"])
 	assert.Equal(t, "customer", data["role"])
