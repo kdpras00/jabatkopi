@@ -18,19 +18,22 @@ class _SplashScreenState extends State<SplashScreen> {
     {
       'title': 'Selamat Datang',
       'subtitle': 'Nikmati pengalaman minum kopi terbaik dengan biji pilihan berkualitas tinggi.',
-      'image': 'https://tmudxkcovejdrweucpjl.supabase.co/storage/v1/object/public/assets/jabat_kopi_logo.png',
+      'image': 'assets/images/logojabatkopi.png',
+      'isLocalAsset': 'true',
       'bg': 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=800',
     },
     {
       'title': 'Biji Kopi Pilihan',
       'subtitle': 'Kami hanya menggunakan biji kopi arabika dan robusta terbaik dari seluruh nusantara.',
-      'image': 'https://tmudxkcovejdrweucpjl.supabase.co/storage/v1/object/public/assets/beans_intro.png',
+      'image': 'assets/images/logojabatkopi.png',
+      'isLocalAsset': 'true',
       'bg': 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800',
     },
     {
       'title': 'Suasana Nyaman',
       'subtitle': 'Tempat yang sempurna untuk bekerja, bersantai, atau sekadar berbincang dengan teman.',
-      'image': 'https://tmudxkcovejdrweucpjl.supabase.co/storage/v1/object/public/assets/cafe_intro.png',
+      'image': 'assets/images/logojabatkopi.png',
+      'isLocalAsset': 'true',
       'bg': 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800',
     },
   ];
@@ -79,12 +82,19 @@ class _SplashScreenState extends State<SplashScreen> {
                               ],
                             ),
                             child: ClipOval(
-                              child: Image.network(
-                                data['image']!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => 
-                                  const Icon(Icons.coffee, size: 100, color: AppColors.caramelGold),
-                              ),
+                              child: data.containsKey('isLocalAsset')
+                                  ? Image.asset(
+                                      data['image']!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const Icon(Icons.coffee, size: 100, color: AppColors.caramelGold),
+                                    )
+                                  : Image.network(
+                                      data['image']!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          const Icon(Icons.coffee, size: 100, color: AppColors.caramelGold),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 60),

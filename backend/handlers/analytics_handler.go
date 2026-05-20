@@ -11,16 +11,20 @@ import (
 )
 
 func GetAdminAnalyticsHandler(c *gin.Context) {
-	var totalOrders int64
-	var totalRevenue float64
+	var stats struct {
+		TotalOrders  int64
+		TotalRevenue float64
+	}
 
-	if database.DB == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"status": 500, "message": "DB connection lost"})
+	if err := database.DB.Model(&models.Order{}).
+		Select("COUNT(id) as total_orders, COALESCE(SUM(total_amount), 0) as total_revenue").
+		Scan(&stats).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": 500, "message": "Failed to calculate analytics"})
 		return
 	}
 
-	database.DB.Model(&models.Order{}).Count(&totalOrders)
-	database.DB.Model(&models.Order{}).Select("COALESCE(sum(total_amount), 0)").Scan(&totalRevenue)
+	totalOrders := stats.TotalOrders
+	totalRevenue := stats.TotalRevenue
 
 	fmt.Printf("[DEBUG] Total Orders: %d, Total Revenue: %f\n", totalOrders, totalRevenue)
 

@@ -181,7 +181,7 @@ func GetActiveReservationHandler(c *gin.Context) {
 	todayEnd := todayStart.Add(72 * time.Hour)
 
 	var reservation models.Reservation
-	result := database.DB.Preload("Table").
+	result := database.DB.Joins("Table").
 		Where("customer_id = ? AND reservation_date >= ? AND reservation_date < ? AND status IN (?)",
 			customerID, todayStart, todayEnd, []string{"booked", "confirmed", "valid", "checked_in"}).
 		Order("CASE status WHEN 'checked_in' THEN 0 ELSE 1 END"). // Prioritaskan yang sudah check-in
@@ -222,7 +222,7 @@ func GetActiveReservationHandler(c *gin.Context) {
 // Lists today's reservations with customer and table details
 func GetAdminReservationsHandler(c *gin.Context) {
 	var reservations []models.Reservation
-	if err := database.DB.Preload("Customer").Preload("Table").
+	if err := database.DB.Joins("Customer").Joins("Table").
 		Order("reservation_date ASC").
 		Find(&reservations).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reservations"})

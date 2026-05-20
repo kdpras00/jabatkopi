@@ -15,10 +15,11 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func init() {
-	godotenv.Load()
+	godotenv.Overload()
 }
 
 func main() {
@@ -31,23 +32,54 @@ func main() {
 		os.Getenv("DB_PORT"),
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// Set GORM Logger threshold to 500ms to reduce slow SQL warnings over remote DB latency
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             500 * time.Millisecond,
+			LogLevel:                  logger.Warn,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  true,
+		},
+	)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: newLogger,
+	})
 	if err != nil {
 		log.Println("[error] failed to initialize database, got error", err)
 	} else {
 		// Set global DB instance
 		database.DB = db
 
-		// 2. Auto Migrate Schema
-		db.AutoMigrate(
-			&models.User{},
-			&models.Menu{},
-			&models.Table{},
-			&models.Reservation{},
-			&models.Order{},
-			&models.OrderItem{},
-			&models.Payment{},
-		)
+		// Optimize connection pool
+		sqlDB, err := db.DB()
+		if err == nil {
+			sqlDB.SetMaxIdleConns(10)
+			sqlDB.SetMaxOpenConns(50)
+			sqlDB.SetConnMaxLifetime(time.Hour)
+		}
+
+		// 2. Auto Migrate Schema (Conditional to save startup time)
+		if os.Getenv("DB_AUTO_MIGRATE") == "true" {
+			log.Println("[info] running database auto migration...")
+			err := db.AutoMigrate(
+				&models.User{},
+				&models.Menu{},
+				&models.Table{},
+				&models.Reservation{},
+				&models.Order{},
+				&models.OrderItem{},
+				&models.Payment{},
+			)
+			if err != nil {
+				log.Println("[error] auto migration failed:", err)
+			} else {
+				log.Println("[info] database auto migration completed successfully")
+			}
+		} else {
+			log.Println("[info] database auto migration skipped (set DB_AUTO_MIGRATE=true in .env to run migrations)")
+		}
 
 		// 2b. Jalankan Background Scheduler (Pembersih Reservasi Kadaluarsa)
 		go func() {
@@ -159,6 +191,7 @@ func main() {
 			admin.DELETE("/users/:id", handlers.DeleteUserHandler)
 
 			// Table Management
+			admin.GET("/tables", handlers.GetTablesHandler)
 			admin.POST("/tables", handlers.CreateTableHandler)
 			admin.POST("/tables/seed", handlers.SeedTablesHandler)
 			admin.PUT("/tables/:id/status", handlers.UpdateTableStatusHandler)
