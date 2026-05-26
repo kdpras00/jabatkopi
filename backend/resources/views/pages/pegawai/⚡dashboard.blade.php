@@ -57,7 +57,7 @@ new class extends Component
 
             $order->update([
                 'status' => $status,
-                'staff_name' => auth()->user() ? auth()->user()->name : 'SISTEM',
+                'staff_name' => auth()->user() ? auth()->user()->username : 'SISTEM',
             ]);
             
             // If status changed to cancelled, restore menu item stocks
