@@ -55,7 +55,10 @@ new class extends Component
                 }
             }
 
-            $order->update(['status' => $status]);
+            $order->update([
+                'status' => $status,
+                'staff_name' => auth()->user() ? auth()->user()->name : 'SISTEM',
+            ]);
             
             // If status changed to cancelled, restore menu item stocks
             if ($oldStatus !== 'cancelled' && $status === 'cancelled') {
