@@ -15,8 +15,8 @@ class OrderItemModel {
     required this.subtotal,
   });
 
-  factory OrderItemModel.fromJson(Map<String, dynamic> json) {
-    final menu = json['menu'] as Map<String, dynamic>? ?? {};
+  factory OrderItemModel.fromJson(Map json) {
+    final menu = json['menu'] != null ? Map.from(json['menu']) : {};
     return OrderItemModel(
       id: json['id'] ?? 0,
       menuId: json['menu_id'] ?? 0,
@@ -30,7 +30,7 @@ class OrderItemModel {
 
 class OrderModel {
   final int id;
-  final int tableId;
+  final int? tableId;
   final double totalAmount;
   final String status;
   final String paymentMethod;
@@ -51,19 +51,19 @@ class OrderModel {
     required this.items,
   });
 
-  factory OrderModel.fromJson(Map<String, dynamic> json) {
+  factory OrderModel.fromJson(Map json) {
     final rawItems = json['items'] as List<dynamic>? ?? [];
-    final customer = json['customer'] as Map<String, dynamic>? ?? {};
+    final customer = json['customer'] != null ? Map.from(json['customer']) : {};
     return OrderModel(
       id: json['id'] ?? 0,
-      tableId: json['table_id'] ?? 0,
+      tableId: json['table_id'] as int?,
       totalAmount: (json['total_amount'] ?? 0).toDouble(),
       status: json['status'] ?? 'pending',
       paymentMethod: json['payment_method'] ?? '',
       staffName: json['staff_name'] ?? 'SISTEM',
       customerName: customer['name'] ?? 'CUSTOMER TERHORMAT',
       createdAt: json['created_at'] ?? '',
-      items: rawItems.map((item) => OrderItemModel.fromJson(item)).toList(),
+      items: rawItems.map((item) => OrderItemModel.fromJson(item as Map)).toList(),
     );
   }
 }

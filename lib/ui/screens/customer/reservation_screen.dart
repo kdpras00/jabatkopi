@@ -8,7 +8,6 @@ import '../../widgets/jk_primary_button.dart';
 import '../../widgets/jk_horizontal_calendar.dart';
 import '../../widgets/jk_time_grid.dart';
 import '../../widgets/jk_guest_selector.dart';
-import '../../widgets/jk_table_grid.dart';
 import '../../../core/services/notification_service.dart';
 import 'reservation_summary_screen.dart';
 
@@ -26,17 +25,17 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
   int _guestCount = 2;
   bool _isChecking = false;
 
-  // Table selection state
-  List<Map<String, dynamic>> _availableTables = [];
-  int? _selectedTableId;
-  bool _isLoadingTables = false;
 
   @override
   void initState() {
     super.initState();
     _reservationRepository = ReservationRepository(apiClient: ApiClient());
-    _loadTables();
     _initNotifications();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Future<void> _initNotifications() async {
@@ -44,52 +43,10 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
     await NotificationService().requestPermission();
   }
 
-  Future<void> _loadTables() async {
-    if (_selectedTime == null) {
-      setState(() {
-        _availableTables = [];
-        _selectedTableId = null;
-      });
-      return;
-    }
-
-    setState(() => _isLoadingTables = true);
-    try {
-      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
-      final response = await ApiClient().get('/tables/status?date=$dateStr&time=$_selectedTime');
-      final List<dynamic> data = response['data'] ?? [];
-      if (mounted) {
-        setState(() {
-          _availableTables = data.cast<Map<String, dynamic>>();
-          
-          if (_selectedTableId != null) {
-            final selectedTable = _availableTables.firstWhere(
-              (t) => t['id'] == _selectedTableId,
-              orElse: () => {},
-            );
-            if (selectedTable.isEmpty || selectedTable['display_status'] != 'available') {
-              _selectedTableId = null;
-            }
-          }
-          
-          _isLoadingTables = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoadingTables = false);
-    }
-  }
-
   void _submitReservation() async {
     if (_selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pilih waktu terlebih dahulu')),
-      );
-      return;
-    }
-    if (_selectedTableId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih meja terlebih dahulu')),
       );
       return;
     }
@@ -104,18 +61,18 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
         _selectedTime!,
         _guestCount,
         0, // will be overwritten by JWT in backend
-        _selectedTableId!,
+        0, // Pass 0 to auto-allocate
       );
 
-      // Ambil booking_id dan barcode dari response backend yang sudah diperbaiki
       final bookingId = resData['booking_id'] ?? 'JK-RES-${resData['reservation_id']}';
       final qrCode = resData['barcode'] ?? resData['qr_code'] ?? bookingId;
+      final assignedTableId = resData['table_id'] as int? ?? 0;
 
       // Tampilkan notifikasi Android/iOS
       await NotificationService().showReservationNotification(
         bookingId,
         '$dateStr $_selectedTime',
-        _selectedTableId!,
+        assignedTableId,
         _guestCount,
       );
 
@@ -127,7 +84,7 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
               date: _selectedDate,
               time: _selectedTime!,
               guests: _guestCount,
-              tableId: _selectedTableId!,
+              tableId: assignedTableId > 0 ? assignedTableId : null,
               qrCode: qrCode,
               bookingId: bookingId,
             ),
@@ -175,7 +132,6 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
                   selectedDate: _selectedDate,
                   onDateSelected: (date) {
                     setState(() => _selectedDate = date);
-                    _loadTables();
                   },
                 ),
                 const SizedBox(height: 32),
@@ -185,11 +141,10 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
                   selectedTime: _selectedTime,
                   onTimeSelected: (time) {
                     setState(() => _selectedTime = time);
-                    _loadTables();
                   },
                 ),
                 const SizedBox(height: 32),
-                Text('GUESTS', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.caramelGold)),
+                Text('JUMLAH ORANG', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.caramelGold)),
                 const SizedBox(height: 16),
                 JkGlassCard(
                   padding: const EdgeInsets.all(24),
@@ -198,43 +153,7 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
                     onCountChanged: (count) => setState(() => _guestCount = count),
                   ),
                 ),
-                const SizedBox(height: 32),
-
-                // ─── PILIH MEJA ───
-                Text('PILIH MEJA', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.caramelGold)),
-                const SizedBox(height: 16),
-                _isLoadingTables
-                    ? const Center(child: CircularProgressIndicator(color: AppColors.caramelGold))
-                    : JkTableGrid(
-                        tables: _availableTables,
-                        selectedTableId: _selectedTableId,
-                        onTableSelected: (id) => setState(() => _selectedTableId = id),
-                      ),
                 const SizedBox(height: 24),
-
-                // Info banner
-                if (_selectedTableId != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.caramelGold.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.caramelGold.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline, color: AppColors.caramelGold, size: 18),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Saat Anda datang dan memesan, meja $_selectedTableId akan otomatis terdeteksi dari reservasi ini.',
-                            style: const TextStyle(color: AppColors.caramelGold, fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 16),
 
                 const Opacity(
                   opacity: 0.5,
@@ -259,7 +178,7 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.charcoal.withOpacity(0),
+                    AppColors.charcoal.withValues(alpha: 0),
                     AppColors.charcoal,
                   ],
                 ),
@@ -267,7 +186,7 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
               child: JkPrimaryButton(
                 label: 'KONFIRMASI RESERVASI',
                 isLoading: _isChecking,
-                onPressed: (_availableTables.isEmpty || _selectedTableId == null) ? null : _submitReservation,
+                onPressed: _selectedTime == null ? null : _submitReservation,
               ),
             ),
           ),

@@ -43,7 +43,7 @@ class JkMenuCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.8),
+                        color: Colors.red.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
@@ -77,7 +77,7 @@ class JkMenuCard extends StatelessWidget {
                 Text(
                   menu.category,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.softCream.withOpacity(isOutOfStock ? 0.3 : 0.6),
+                    color: AppColors.softCream.withValues(alpha: isOutOfStock ? 0.3 : 0.6),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -87,7 +87,7 @@ class JkMenuCard extends StatelessWidget {
                     Text(
                       'Rp ${menu.price.toInt()}',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: isOutOfStock ? AppColors.caramelGold.withOpacity(0.5) : AppColors.caramelGold,
+                            color: isOutOfStock ? AppColors.caramelGold.withValues(alpha: 0.5) : AppColors.caramelGold,
                             fontWeight: FontWeight.bold,
                           ),
                     ),

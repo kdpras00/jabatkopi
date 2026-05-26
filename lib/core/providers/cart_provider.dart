@@ -85,4 +85,9 @@ class CartProvider with ChangeNotifier {
     _tableId = id;
     notifyListeners();
   }
+
+  void clearTableId() {
+    _tableId = null;
+    notifyListeners();
+  }
 }

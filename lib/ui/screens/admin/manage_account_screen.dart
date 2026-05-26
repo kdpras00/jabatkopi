@@ -117,7 +117,7 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -150,11 +150,11 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
                       } else {
                         await ApiClient().put('/admin/users/${user['id']}', data);
                       }
-                      if (mounted) {
-                        Navigator.pop(context);
-                        _fetchUsers();
-                      }
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                      _fetchUsers();
                     } catch (e) {
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                     }
                   },
@@ -180,7 +180,7 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppColors.caramelGold, size: 20),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: Colors.white.withValues(alpha: 0.05),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           ),
         ),
@@ -215,7 +215,7 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: 'Cari nama, username, atau role...',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                         border: InputBorder.none,
                         icon: const Icon(Icons.search, color: AppColors.caramelGold),
                         suffixIcon: _searchQuery.isNotEmpty 
@@ -282,8 +282,8 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), shape: BoxShape.circle),
-            child: Icon(Icons.people_outline, size: 80, color: AppColors.caramelGold.withOpacity(0.2)),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
+            child: Icon(Icons.people_outline, size: 80, color: AppColors.caramelGold.withValues(alpha: 0.2)),
           ),
           const SizedBox(height: 24),
           const Text('No Accounts Found', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
@@ -306,10 +306,9 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
           TextButton(
             onPressed: () async {
               await ApiClient().delete('/admin/users/${user['id']}');
-              if (mounted) {
-                Navigator.pop(ctx);
-                _fetchUsers();
-              }
+              if (!ctx.mounted) return;
+              Navigator.pop(ctx);
+              if (mounted) _fetchUsers();
             },
             child: const Text('DELETE', style: TextStyle(color: Colors.red)),
           ),

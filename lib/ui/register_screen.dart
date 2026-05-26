@@ -129,7 +129,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           keyboardType: keyboardType,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: AppColors.caramelGold.withOpacity(0.5), size: 20),
+            prefixIcon: Icon(icon, color: AppColors.caramelGold.withValues(alpha: 0.5), size: 20),
             filled: true,
             fillColor: Colors.black26,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),

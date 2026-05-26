@@ -70,7 +70,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(color: AppColors.caramelGold.withOpacity(0.1), shape: BoxShape.circle),
+                              decoration: BoxDecoration(color: AppColors.caramelGold.withValues(alpha: 0.1), shape: BoxShape.circle),
                               child: Icon(
                                 n['type'] == 'promo' ? Icons.local_offer : (n['type'] == 'order' ? Icons.shopping_bag : Icons.notifications),
                                 color: AppColors.caramelGold,

@@ -67,4 +67,12 @@ class OrderRepository {
       throw Exception('Failed to get order details: $e');
     }
   }
+
+  Future<void> cancelOrder(int id) async {
+    try {
+      await apiClient.put('/orders/$id/cancel', {});
+    } catch (e) {
+      throw Exception('Failed to cancel order: $e');
+    }
+  }
 }

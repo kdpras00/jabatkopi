@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -15,7 +14,6 @@ import '../../../core/network/api_client.dart';
 import '../../widgets/jk_glass_card.dart';
 import '../../widgets/jk_menu_card.dart';
 import '../../widgets/jk_primary_button.dart';
-import '../../widgets/jk_shimmer.dart';
 import 'reservation_screen.dart';
 import 'reservation_summary_screen.dart';
 import 'cart_screen.dart';
@@ -50,7 +48,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         onTap: (index) => setState(() => _currentIndex = index),
         backgroundColor: AppColors.charcoal,
         selectedItemColor: AppColors.caramelGold,
-        unselectedItemColor: AppColors.softCream.withOpacity(0.5),
+        unselectedItemColor: AppColors.softCream.withValues(alpha: 0.5),
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -208,6 +206,16 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
                   itemCount: _orders.length,
                   itemBuilder: (context, index) {
                     final order = _orders[index];
+                    Color badgeColor;
+                    switch (order.status) {
+                      case 'pending': badgeColor = Colors.orange; break;
+                      case 'processing': badgeColor = Colors.indigo; break;
+                      case 'preparing': badgeColor = Colors.blue; break;
+                      case 'ready': badgeColor = Colors.green; break;
+                      case 'completed': badgeColor = AppColors.caramelGold; break;
+                      case 'cancelled': badgeColor = Colors.redAccent; break;
+                      default: badgeColor = Colors.grey;
+                    }
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: JkGlassCard(
@@ -222,12 +230,13 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: order.status == 'pending' ? Colors.orange : AppColors.caramelGold,
+                                    color: badgeColor.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: badgeColor.withValues(alpha: 0.6)),
                                   ),
                                   child: Text(
                                     order.status.toUpperCase(),
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.charcoal),
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor),
                                   ),
                                 ),
                               ],
@@ -237,11 +246,12 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
                             const SizedBox(height: 16),
                             JkPrimaryButton(
                               label: 'LIHAT STATUS / STRUK',
-                              onPressed: () {
-                                Navigator.push(
+                              onPressed: () async {
+                                await Navigator.push(
                                   context,
                                   MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderId: order.id)),
                                 );
+                                _fetchHistory();
                               },
                             ),
                           ],
@@ -286,6 +296,43 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
     }
   }
 
+  Future<void> _cancelReservation(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.charcoal,
+        title: const Text('Batalkan Reservasi?', style: TextStyle(color: AppColors.caramelGold)),
+        content: const Text('Meja yang sudah direservasi akan dibebaskan.', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('TIDAK', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('YA, BATALKAN', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ReservationRepository(apiClient: ApiClient()).cancelReservation(id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reservasi berhasil dibatalkan.'), backgroundColor: Colors.green),
+        );
+        _fetchReservations();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -306,9 +353,27 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                     final tableId = res['table_id'] ?? 0;
                     final pax = res['pax'] ?? 0;
                     final timeStr = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(res['reservation_date']));
-                    final status = res['status'] ?? 'pending';
+                    final status = res['status']?.toString() ?? 'pending';
 
-                    final isArrived = status == 'arrived';
+                    Color statusColor;
+                    switch (status) {
+                      case 'booked': statusColor = Colors.orange; break;
+                      case 'checked_in': statusColor = Colors.green; break;
+                      case 'completed': statusColor = AppColors.caramelGold; break;
+                      case 'cancelled': statusColor = Colors.redAccent; break;
+                      default: statusColor = Colors.grey;
+                    }
+
+                    String statusLabel;
+                    switch (status) {
+                      case 'booked': statusLabel = 'BOOKING'; break;
+                      case 'checked_in': statusLabel = 'TELAH TIBA'; break;
+                      case 'completed': statusLabel = 'SELESAI'; break;
+                      case 'cancelled': statusLabel = 'DIBATALKAN'; break;
+                      default: statusLabel = status.toUpperCase();
+                    }
+
+                    final canCancel = status == 'booked';
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
@@ -340,13 +405,13 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: isArrived ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                                      color: statusColor.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: isArrived ? Colors.green : Colors.orange),
+                                      border: Border.all(color: statusColor.withValues(alpha: 0.6)),
                                     ),
                                     child: Text(
-                                      isArrived ? 'TELAH TIBA' : status.toString().toUpperCase(),
-                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isArrived ? Colors.greenAccent : Colors.orangeAccent),
+                                      statusLabel,
+                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
                                     ),
                                   ),
                                 ],
@@ -374,15 +439,32 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                                       Text(timeStr, style: const TextStyle(color: Colors.white54)),
                                     ],
                                   ),
-                                  Row(
+                                  const Row(
                                     children: [
-                                      const Icon(Icons.local_activity, color: AppColors.caramelGold, size: 16),
-                                      const SizedBox(width: 4),
-                                      const Text('TIKET CHECK-IN', style: TextStyle(color: AppColors.caramelGold, fontSize: 11, fontWeight: FontWeight.bold)),
+                                      Icon(Icons.local_activity, color: AppColors.caramelGold, size: 16),
+                                      SizedBox(width: 4),
+                                      Text('TIKET CHECK-IN', style: TextStyle(color: AppColors.caramelGold, fontSize: 11, fontWeight: FontWeight.bold)),
                                     ],
                                   ),
                                 ],
                               ),
+                              if (canCancel) ...[
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      foregroundColor: Colors.redAccent,
+                                      side: const BorderSide(color: Colors.redAccent),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    onPressed: () => _cancelReservation(res['id'] as int),
+                                    icon: const Icon(Icons.cancel_outlined, size: 16),
+                                    label: const Text('BATALKAN RESERVASI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -403,6 +485,8 @@ class CustomerProfileTab extends StatefulWidget {
 
 class _CustomerProfileTabState extends State<CustomerProfileTab> {
   Map<String, dynamic>? _profileData;
+  int _orderCount = 0;
+  int _bookingCount = 0;
   bool _isLoading = true;
 
   @override
@@ -414,9 +498,14 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
   Future<void> _fetchProfile() async {
     try {
       final res = await ApiClient().get('/profile');
+      final orders = await OrderRepository(apiClient: ApiClient()).getOrderHistory();
+      final reservations = await ReservationRepository(apiClient: ApiClient()).getReservationHistory();
+
       if (mounted) {
         setState(() {
           _profileData = res['data'];
+          _orderCount = orders.length;
+          _bookingCount = reservations.length;
           _isLoading = false;
         });
       }
@@ -485,7 +574,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                         const SizedBox(height: 4),
                         Text(
                           'Member Jabat Kopi',
-                          style: TextStyle(color: AppColors.softCream.withOpacity(0.6), fontSize: 13),
+                          style: TextStyle(color: AppColors.softCream.withValues(alpha: 0.6), fontSize: 13),
                         ),
                       ],
                     ),
@@ -498,11 +587,11 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildStatCard('Orders', '12', Icons.receipt_long),
+                      child: _buildStatCard('Orders', _orderCount.toString(), Icons.receipt_long),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: _buildStatCard('Booking', '3', Icons.event_seat),
+                      child: _buildStatCard('Booking', _bookingCount.toString(), Icons.event_seat),
                     ),
                   ],
                 ),
@@ -557,11 +646,11 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                   child: TextButton.icon(
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.red.withOpacity(0.1),
+                      backgroundColor: Colors.red.withValues(alpha: 0.1),
                       foregroundColor: Colors.redAccent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: Colors.redAccent.withOpacity(0.3)),
+                        side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.3)),
                       ),
                     ),
                     icon: const Icon(Icons.logout),
@@ -573,7 +662,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(
+                const Text(
                   'v1.2.0 Build 2024.05',
                   style: TextStyle(color: Colors.white24, fontSize: 10),
                 ),
@@ -590,7 +679,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Icon(icon, color: AppColors.caramelGold.withOpacity(0.7), size: 20),
+          Icon(icon, color: AppColors.caramelGold.withValues(alpha: 0.7), size: 20),
           const SizedBox(height: 8),
           Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
           Text(label, style: const TextStyle(fontSize: 11, color: Colors.white54)),
@@ -604,7 +693,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: AppColors.caramelGold.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(color: AppColors.caramelGold.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
         child: Icon(icon, color: AppColors.caramelGold, size: 20),
       ),
       title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),

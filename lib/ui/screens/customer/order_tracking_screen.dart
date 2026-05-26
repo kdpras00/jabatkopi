@@ -8,6 +8,8 @@ import '../../widgets/jk_glass_card.dart';
 import '../../widgets/jk_primary_button.dart';
 import 'digital_receipt_screen.dart';
 import 'home_screen.dart';
+import '../../../core/providers/cart_provider.dart';
+import 'package:provider/provider.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final int orderId;
@@ -23,6 +25,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   OrderModel? _order;
   Timer? _timer;
   bool _isLoading = true;
+  bool _isCancelling = false;
 
   @override
   void initState() {
@@ -55,8 +58,51 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
+  Future<void> _cancelOrder() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.charcoal,
+        title: const Text('Batalkan Pesanan?', style: TextStyle(color: AppColors.caramelGold)),
+        content: const Text('Pesanan yang dibatalkan tidak dapat dikembalikan.', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('TIDAK', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('YA, BATALKAN', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() => _isCancelling = true);
+    try {
+      await _orderRepo.cancelOrder(widget.orderId);
+      // clear cart tableId if any
+      if (mounted) {
+        context.read<CartProvider>().clearTableId();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pesanan berhasil dibatalkan.'), backgroundColor: Colors.green),
+        );
+        await _fetchOrder();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCancelling = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isCancelled = _order?.status == 'cancelled';
     return Scaffold(
       backgroundColor: AppColors.charcoal,
       appBar: AppBar(
@@ -72,44 +118,62 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      const Icon(Icons.coffee, size: 80, color: AppColors.caramelGold),
+                      Icon(
+                        isCancelled ? Icons.cancel_outlined : Icons.coffee,
+                        size: 80,
+                        color: isCancelled ? Colors.redAccent : AppColors.caramelGold,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'Pesanan #JK-ORDER-${widget.orderId}',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
                       ),
                       const SizedBox(height: 8),
-                      Text('Meja ${_order!.tableId}', style: const TextStyle(color: AppColors.caramelGold, fontSize: 16)),
+                      if (isCancelled)
+                        Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+                          ),
+                          child: const Text('DIBATALKAN', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 13)),
+                        )
+                      else
+                        Text('Meja ${_order!.tableId ?? 'Belum Ditentukan'}', style: const TextStyle(color: AppColors.caramelGold, fontSize: 16)),
                       const SizedBox(height: 40),
-                      
-                      _buildStatusStep(
-                        context,
-                        title: 'Pesanan Diterima',
-                        subtitle: 'Pesanan Anda telah masuk ke sistem',
-                        isCompleted: true,
-                        isActive: _order!.status == 'pending' || _order!.status == 'processing',
-                      ),
-                      _buildStatusStep(
-                        context,
-                        title: 'Sedang Disiapkan',
-                        subtitle: 'Barista sedang meracik kopi Anda',
-                        isCompleted: _order!.status == 'preparing' || _order!.status == 'ready' || _order!.status == 'completed',
-                        isActive: _order!.status == 'preparing',
-                      ),
-                      _buildStatusStep(
-                        context,
-                        title: 'Siap Diambil',
-                        subtitle: 'Ambil pesanan Anda di meja kasir/barista',
-                        isCompleted: _order!.status == 'ready' || _order!.status == 'completed',
-                        isActive: _order!.status == 'ready',
-                      ),
-                      _buildStatusStep(
-                        context,
-                        title: 'Selesai',
-                        subtitle: 'Selamat menikmati kopi Anda!',
-                        isCompleted: _order!.status == 'completed',
-                        isActive: _order!.status == 'completed',
-                      ),
+
+                      if (!isCancelled) ...[
+                        _buildStatusStep(
+                          context,
+                          title: 'Pesanan Diterima',
+                          subtitle: 'Pesanan Anda telah masuk ke sistem',
+                          isCompleted: _order!.status != 'cancelled',
+                          isActive: _order!.status == 'pending' || _order!.status == 'processing',
+                        ),
+                        _buildStatusStep(
+                          context,
+                          title: 'Sedang Disiapkan',
+                          subtitle: 'Barista sedang meracik kopi Anda',
+                          isCompleted: _order!.status == 'preparing' || _order!.status == 'ready' || _order!.status == 'completed',
+                          isActive: _order!.status == 'preparing',
+                        ),
+                        _buildStatusStep(
+                          context,
+                          title: 'Siap Diambil',
+                          subtitle: 'Ambil pesanan Anda di meja kasir/barista',
+                          isCompleted: _order!.status == 'ready' || _order!.status == 'completed',
+                          isActive: _order!.status == 'ready',
+                        ),
+                        _buildStatusStep(
+                          context,
+                          title: 'Selesai',
+                          subtitle: 'Selamat menikmati kopi Anda!',
+                          isCompleted: _order!.status == 'completed',
+                          isActive: _order!.status == 'completed',
+                        ),
+                      ],
                       const SizedBox(height: 40),
 
                       JkGlassCard(
@@ -135,6 +199,26 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           );
                         },
                       ),
+                      // Cancel button — only for pending orders
+                      if (_order!.status == 'pending') ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              foregroundColor: Colors.redAccent,
+                              side: const BorderSide(color: Colors.redAccent),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: _isCancelling ? null : _cancelOrder,
+                            icon: _isCancelling
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent))
+                                : const Icon(Icons.cancel_outlined, size: 18),
+                            label: const Text('BATALKAN PESANAN', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () {
@@ -203,7 +287,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.softCream.withOpacity(0.6),
+                    color: AppColors.softCream.withValues(alpha: 0.6),
                   ),
                 ),
               ],

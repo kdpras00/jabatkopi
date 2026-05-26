@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
-import 'jk_glass_card.dart';
 
 class JkHorizontalCalendar extends StatefulWidget {
   final DateTime selectedDate;
@@ -51,7 +50,7 @@ class _JkHorizontalCalendarState extends State<JkHorizontalCalendar> {
                   Text(
                     DateFormat('E').format(date).toUpperCase(),
                     style: TextStyle(
-                      color: isSelected ? AppColors.charcoal : AppColors.softCream.withOpacity(0.6),
+                      color: isSelected ? AppColors.charcoal : AppColors.softCream.withValues(alpha: 0.6),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),

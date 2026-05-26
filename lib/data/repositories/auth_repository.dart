@@ -6,19 +6,15 @@ class AuthRepository {
 
   AuthRepository({required this.apiClient});
 
-  Future<AuthModel> login(String username, String password) async {
+  Future<AuthModel> login(String email, String password) async {
     try {
       final response = await apiClient.post('/auth/login', {
-        'username': username,
+        'email': email,
         'password': password,
       });
-      
-      final data = response['data'];
-      final authData = AuthModel.fromJson(data);
-      
-      // Auto-set token in ApiClient for subsequent requests
+
+      final authData = AuthModel.fromJson(response['data']);
       await apiClient.setToken(authData.token);
-      
       return authData;
     } catch (e) {
       throw Exception('Login failed: $e');

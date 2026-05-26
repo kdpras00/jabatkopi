@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/theme/app_colors.dart';
 import '../core/providers/auth_provider.dart';
 import 'widgets/jk_glass_card.dart';
 import 'widgets/jk_primary_button.dart';
+import 'main_navigator.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,19 +16,45 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSupabaseConnection();
+  }
+
+  Future<void> _checkSupabaseConnection() async {
+    try {
+      final supabase = Supabase.instance.client;
+      // Do a simple query to verify connection in the background
+      await supabase.from('users').select('id').limit(1);
+      debugPrint('Supabase connection verified successfully.');
+    } catch (e) {
+      debugPrint('Supabase connection error: $e');
+    }
+  }
 
   void _handleLogin() async {
     final provider = context.read<AuthProvider>();
     try {
       final success = await provider.login(
-        _usernameController.text,
+        _emailController.text,
         _passwordController.text,
       );
-      if (!success && mounted) {
+      if (success && mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const MainNavigator(),
+            transitionDuration: const Duration(milliseconds: 400),
+            transitionsBuilder: (_, animation, __, child) =>
+                FadeTransition(opacity: animation, child: child),
+          ),
+        );
+      } else if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid username or password')),
+          const SnackBar(content: Text('Invalid email or password')),
         );
       }
     } catch (e) {
@@ -73,10 +101,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     TextField(
-                      controller: _usernameController,
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person, color: AppColors.caramelGold),
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email, color: AppColors.caramelGold),
                       ),
                     ),
                     const SizedBox(height: 16),

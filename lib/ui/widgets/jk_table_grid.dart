@@ -50,13 +50,13 @@ class JkTableGrid extends StatelessWidget {
         bool isSelectable = true;
 
         if (status == 'occupied') {
-          bgColor = Colors.red.withOpacity(0.2);
-          borderColor = Colors.red.withOpacity(0.5);
+          bgColor = Colors.red.withValues(alpha: 0.2);
+          borderColor = Colors.red.withValues(alpha: 0.5);
           textColor = Colors.redAccent;
           isSelectable = false;
         } else if (status == 'reserved') {
-          bgColor = Colors.orange.withOpacity(0.2);
-          borderColor = Colors.orange.withOpacity(0.5);
+          bgColor = Colors.orange.withValues(alpha: 0.2);
+          borderColor = Colors.orange.withValues(alpha: 0.5);
           textColor = Colors.orangeAccent;
           isSelectable = false;
         }
@@ -77,7 +77,7 @@ class JkTableGrid extends StatelessWidget {
               border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
               boxShadow: isSelected ? [
                 BoxShadow(
-                  color: AppColors.caramelGold.withOpacity(0.3),
+                  color: AppColors.caramelGold.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 )
@@ -107,7 +107,7 @@ class JkTableGrid extends StatelessWidget {
                       Text(
                         '$cap Pax',
                         style: TextStyle(
-                          color: textColor.withOpacity(0.7),
+                          color: textColor.withValues(alpha: 0.7),
                           fontSize: 9,
                         ),
                       ),
@@ -125,7 +125,7 @@ class JkTableGrid extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 2,
                             offset: const Offset(0, 1),
                           )

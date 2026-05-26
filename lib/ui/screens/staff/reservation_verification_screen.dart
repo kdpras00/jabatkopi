@@ -220,15 +220,15 @@ class _ReservationVerificationScreenState extends State<ReservationVerificationS
                                                   letterSpacing: 1)),
                                           const SizedBox(height: 4),
                                           Text(fullDateStr.toUpperCase(), 
-                                            style: TextStyle(color: AppColors.softCream.withOpacity(0.5), fontSize: 10, letterSpacing: 1)),
+                                            style: TextStyle(color: AppColors.softCream.withValues(alpha: 0.5), fontSize: 10, letterSpacing: 1)),
                                         ],
                                       ),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: statusColor.withOpacity(0.15),
+                                          color: statusColor.withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: statusColor.withOpacity(0.5)),
+                                          border: Border.all(color: statusColor.withValues(alpha: 0.5)),
                                         ),
                                         child: Text(
                                           statusLabel,
@@ -245,7 +245,7 @@ class _ReservationVerificationScreenState extends State<ReservationVerificationS
                                   Row(
                                     children: [
                                       CircleAvatar(
-                                        backgroundColor: AppColors.caramelGold.withOpacity(0.1),
+                                        backgroundColor: AppColors.caramelGold.withValues(alpha: 0.1),
                                         radius: 18,
                                         child: const Icon(Icons.person, color: AppColors.caramelGold, size: 20),
                                       ),
@@ -298,7 +298,7 @@ class _ReservationVerificationScreenState extends State<ReservationVerificationS
   Widget _buildInfoItem(IconData icon, String label) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.caramelGold.withOpacity(0.7), size: 16),
+        Icon(icon, color: AppColors.caramelGold.withValues(alpha: 0.7), size: 16),
         const SizedBox(width: 8),
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
       ],

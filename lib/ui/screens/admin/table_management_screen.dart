@@ -120,9 +120,9 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.caramelGold.withOpacity(0.3)),
+                      border: Border.all(color: AppColors.caramelGold.withValues(alpha: 0.3)),
                     ),
                     child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -197,7 +197,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppColors.caramelGold, size: 20),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: Colors.white.withValues(alpha: 0.05),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -290,9 +290,9 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: _statusColor(status).withOpacity(0.15),
+                                          color: _statusColor(status).withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: _statusColor(status).withOpacity(0.4)),
+                                          border: Border.all(color: _statusColor(status).withValues(alpha: 0.4)),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -332,8 +332,8 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
                                       onPressed: () => _updateTableStatus(tableId, isAvailable ? 'occupied' : 'available'),
                                       style: TextButton.styleFrom(
                                         backgroundColor: isAvailable
-                                            ? Colors.redAccent.withOpacity(0.15)
-                                            : Colors.greenAccent.withOpacity(0.15),
+                                            ? Colors.redAccent.withValues(alpha: 0.15)
+                                            : Colors.greenAccent.withValues(alpha: 0.15),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                         padding: const EdgeInsets.symmetric(vertical: 4),
                                       ),
@@ -387,8 +387,8 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), shape: BoxShape.circle),
-            child: Icon(Icons.table_restaurant, size: 80, color: AppColors.caramelGold.withOpacity(0.2)),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
+            child: Icon(Icons.table_restaurant, size: 80, color: AppColors.caramelGold.withValues(alpha: 0.2)),
           ),
           const SizedBox(height: 24),
           const Text('Belum Ada Data Meja', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),

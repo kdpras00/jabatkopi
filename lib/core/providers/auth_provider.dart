@@ -5,48 +5,78 @@ import '../../core/network/api_client.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthRepository _authRepository = AuthRepository(apiClient: ApiClient());
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+  );
 
   String? _role;
   String? _username;
+  int? _userId;
   bool _isAuthenticated = false;
   bool _isLoading = false;
 
   String? get role => _role;
   String? get username => _username;
+  int? get userId => _userId;
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
 
-  AuthProvider() {
-    _checkAuth();
-  }
+  AuthProvider();
 
-  Future<void> _checkAuth() async {
-    final token = await _storage.read(key: 'jwt_token');
-    final savedRole = await _storage.read(key: 'user_role');
-    final savedUsername = await _storage.read(key: 'username');
-    
-    if (token != null && savedRole != null) {
-      _isAuthenticated = true;
-      _role = savedRole;
-      _username = savedUsername ?? 'User';
+  /// Membaca session yang tersimpan dari secure storage.
+  /// Mengembalikan [true] jika session customer valid ditemukan, [false] jika tidak.
+  Future<bool> tryRestoreSession() async {
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      final savedRole = await _storage.read(key: 'user_role');
+      final savedUsername = await _storage.read(key: 'username');
+      final savedUserId = await _storage.read(key: 'user_id');
+
+      // Hanya auto-login untuk customer. Admin/pegawai menggunakan web portal.
+      if (token != null && savedRole == 'customer') {
+        _isAuthenticated = true;
+        _role = savedRole;
+        _username = savedUsername ?? 'User';
+        _userId = int.tryParse(savedUserId ?? '');
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error restoring session: $e');
+      try {
+        await _storage.deleteAll();
+      } catch (_) {}
+      _isAuthenticated = false;
       notifyListeners();
+      return false;
     }
   }
 
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final authData = await _authRepository.login(username, password);
+      final authData = await _authRepository.login(email, password);
+      
+      if (authData.role == 'admin' || authData.role == 'pegawai') {
+        _isLoading = false;
+        notifyListeners();
+        throw Exception('Akses ditolak: Akun admin/pegawai hanya dapat mengakses lewat portal web.');
+      }
+
       _role = authData.role;
       _username = authData.username;
+      _userId = authData.id;
       _isAuthenticated = true;
       
-      // Persist role for auto-login
+      // Persist for auto-login
       await _storage.write(key: 'user_role', value: _role!);
       await _storage.write(key: 'username', value: _username!);
+      await _storage.write(key: 'user_id', value: _userId!.toString());
       
       _isLoading = false;
       notifyListeners();
@@ -62,8 +92,10 @@ class AuthProvider with ChangeNotifier {
     await _storage.delete(key: 'jwt_token');
     await _storage.delete(key: 'user_role');
     await _storage.delete(key: 'username');
+    await _storage.delete(key: 'user_id');
     _role = null;
     _username = null;
+    _userId = null;
     _isAuthenticated = false;
     notifyListeners();
   }

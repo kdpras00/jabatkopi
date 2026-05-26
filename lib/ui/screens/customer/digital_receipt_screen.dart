@@ -82,7 +82,7 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen> {
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 12,
                               offset: const Offset(0, 6),
                             ),
@@ -194,11 +194,11 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen> {
                                   Text('Rp ${NumberFormat('#,###').format(_order!.totalAmount)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                                 ],
                               ),
-                              Row(
+                              const Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('KEMBALIAN'),
-                                  const Text('Rp 0'),
+                                  Text('KEMBALIAN'),
+                                  Text('Rp 0'),
                                 ],
                               ),
                               const SizedBox(height: 12),
@@ -281,10 +281,10 @@ class _DashedDivider extends StatelessWidget {
           direction: Axis.horizontal,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(dashCount, (_) {
-            return SizedBox(
+            return const SizedBox(
               width: dashWidth,
               height: dashHeight,
-              child: const DecoratedBox(
+              child: DecoratedBox(
                 decoration: BoxDecoration(color: Colors.black38),
               ),
             );

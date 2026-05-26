@@ -61,11 +61,11 @@ class _JkPrimaryButtonState extends State<JkPrimaryButton> with SingleTickerProv
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: isEnabled ? AppColors.caramelGold : AppColors.caramelGold.withOpacity(0.3),
+            color: isEnabled ? AppColors.caramelGold : AppColors.caramelGold.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
             boxShadow: isEnabled ? [
               BoxShadow(
-                color: AppColors.caramelGold.withOpacity(0.3),
+                color: AppColors.caramelGold.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -84,7 +84,7 @@ class _JkPrimaryButtonState extends State<JkPrimaryButton> with SingleTickerProv
                 : Text(
                     widget.label,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: isEnabled ? AppColors.charcoal : AppColors.charcoal.withOpacity(0.5),
+                          color: isEnabled ? AppColors.charcoal : AppColors.charcoal.withValues(alpha: 0.5),
                           fontWeight: FontWeight.bold,
                         ),
                   ),

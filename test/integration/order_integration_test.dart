@@ -14,17 +14,18 @@ void main() {
   });
 
   group('Order Integration Test', () {
-    test('createOrder returns OrderModel on success', () async {
+    test('createOrder returns order data on success', () async {
       // Create a mock order to the real backend
       final items = [
         {'menu_id': 1, 'qty': 2, 'subtotal': 30000}
       ];
       
-      final order = await orderRepository.createOrder(4, 1, 30000, 'qris', items);
+      final result = await orderRepository.createOrder(4, 1, 30000, 'qris', items);
+      final order = result['order'] as Map<String, dynamic>;
       
-      expect(order.id, isNotNull);
-      expect(order.tableId, 4);
-      expect(order.status, 'pending');
+      expect(order['id'], isNotNull);
+      expect(order['table_id'], 4);
+      expect(order['status'], 'pending');
     });
 
     test('getOrdersByTable returns list of orders', () async {

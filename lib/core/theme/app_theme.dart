@@ -12,7 +12,6 @@ class AppTheme {
         primary: AppColors.caramelGold,
         secondary: AppColors.caramelGold,
         surface: AppColors.darkGrey,
-        background: AppColors.charcoal,
       ),
       appBarTheme: const AppBarTheme(
         centerTitle: true,

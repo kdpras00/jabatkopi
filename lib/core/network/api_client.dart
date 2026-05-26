@@ -1,91 +1,88 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' show Platform;
+import 'handlers/auth_handler.dart';
+import 'handlers/menu_handler.dart';
+import 'handlers/table_handler.dart';
+import 'handlers/reservation_handler.dart';
+import 'handlers/order_handler.dart';
+import 'handlers/notification_handler.dart';
 
 class ApiClient {
-  static String get baseUrl {
-    // Return different localhost mapping based on platform
-    // 10.0.2.2 is the special alias to your host loopback interface in Android emulator
-    if (!kIsWeb && Platform.isAndroid) {
-      return 'http://10.0.2.2:8080/api/v1';
-    }
-    return 'http://localhost:8080/api/v1';
-  }
-
   final FlutterSecureStorage secureStorage;
-  String? _authToken;
 
-  ApiClient({FlutterSecureStorage? storage}) 
-      : secureStorage = storage ?? const FlutterSecureStorage() {
-    _loadToken();
-  }
+  late final AuthHandler _authHandler;
+  late final MenuHandler _menuHandler;
+  late final TableHandler _tableHandler;
+  late final ReservationHandler _reservationHandler;
+  late final OrderHandler _orderHandler;
+  late final NotificationHandler _notificationHandler;
 
-  Future<void> _loadToken() async {
-    _authToken = await secureStorage.read(key: 'jwt_token');
+  ApiClient({FlutterSecureStorage? storage})
+      : secureStorage = storage ??
+            const FlutterSecureStorage(
+              aOptions: AndroidOptions(encryptedSharedPreferences: true),
+            ) {
+    _authHandler = AuthHandler(secureStorage);
+    _menuHandler = MenuHandler();
+    _tableHandler = TableHandler(secureStorage);
+    _reservationHandler = ReservationHandler(secureStorage);
+    _orderHandler = OrderHandler(secureStorage);
+    _notificationHandler = NotificationHandler(secureStorage);
   }
 
   Future<void> setToken(String token) async {
-    _authToken = token;
     await secureStorage.write(key: 'jwt_token', value: token);
   }
 
   Future<void> clearToken() async {
-    _authToken = null;
     await secureStorage.delete(key: 'jwt_token');
   }
 
-  Future<Map<String, String>> get _headers async {
-    final headers = {'Content-Type': 'application/json'};
-    if (_authToken == null) {
-      await _loadToken();
-    }
-    if (_authToken != null) {
-      headers['Authorization'] = 'Bearer $_authToken';
-    }
-    return headers;
-  }
+  Future<dynamic> _proxyRequest(String method, String endpoint,
+      [Map<String, dynamic>? body]) async {
+    final uri = Uri.parse(endpoint);
+    final cleanPath = uri.path;
+    final pathSegments = uri.pathSegments;
+    final params = uri.queryParameters;
 
-  Future<dynamic> get(String endpoint) async {
-    final headers = await _headers;
-    final response = await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers);
-    return _processResponse(response);
-  }
+    try {
+      if (cleanPath.startsWith('/auth') || cleanPath.startsWith('/profile')) {
+        return _authHandler.handle(method, cleanPath, body);
+      }
+      if (cleanPath.startsWith('/menus') ||
+          cleanPath.startsWith('/admin/menus')) {
+        return _menuHandler.handle(method, cleanPath, pathSegments, body);
+      }
+      if (cleanPath.startsWith('/tables') ||
+          cleanPath.startsWith('/admin/tables')) {
+        return _tableHandler.handle(
+            method, cleanPath, pathSegments, params, body);
+      }
+      if (cleanPath.startsWith('/reservations') ||
+          cleanPath.startsWith('/admin/reservations')) {
+        return _reservationHandler.handle(
+            method, cleanPath, pathSegments, body);
+      }
+      if (cleanPath.startsWith('/orders') ||
+          cleanPath.startsWith('/admin/users')) {
+        return _orderHandler.handle(method, cleanPath, pathSegments, body);
+      }
+      if (cleanPath.startsWith('/notifications')) {
+        return _notificationHandler.handle(method, cleanPath);
+      }
 
-  Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
-    final headers = await _headers;
-    final response = await http.post(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: headers,
-      body: jsonEncode(body),
-    );
-    return _processResponse(response);
-  }
-
-  Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
-    final headers = await _headers;
-    final response = await http.put(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: headers,
-      body: jsonEncode(body),
-    );
-    return _processResponse(response);
-  }
-
-  Future<dynamic> delete(String endpoint) async {
-    final headers = await _headers;
-    final response = await http.delete(Uri.parse('$baseUrl$endpoint'), headers: headers);
-    return _processResponse(response);
-  }
-
-  dynamic _processResponse(http.Response response) {
-    final jsonResponse = jsonDecode(response.body);
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonResponse;
-    } else {
-      throw Exception(jsonResponse['message'] ?? 'API Error');
+      throw Exception('Route not handled: $method $cleanPath');
+    } catch (e) {
+      throw Exception('Serverless error ($cleanPath): $e');
     }
   }
+
+  Future<dynamic> get(String endpoint) => _proxyRequest('GET', endpoint);
+
+  Future<dynamic> post(String endpoint, Map<String, dynamic> body) =>
+      _proxyRequest('POST', endpoint, body);
+
+  Future<dynamic> put(String endpoint, Map<String, dynamic> body) =>
+      _proxyRequest('PUT', endpoint, body);
+
+  Future<dynamic> delete(String endpoint) => _proxyRequest('DELETE', endpoint);
 }

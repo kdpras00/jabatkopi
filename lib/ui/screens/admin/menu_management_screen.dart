@@ -126,9 +126,9 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
+                        color: Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.caramelGold.withOpacity(0.3)),
+                        border: Border.all(color: AppColors.caramelGold.withValues(alpha: 0.3)),
                         image: previewBytes != null 
                           ? DecorationImage(image: MemoryImage(previewBytes!), fit: BoxFit.cover)
                           : (menu != null && menu.imageUrl.isNotEmpty)
@@ -159,7 +159,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -222,11 +222,11 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                         await ApiClient().put('/admin/menus/${menu.id}', data);
                       }
                       
-                      if (mounted) {
-                        Navigator.pop(context);
-                        _fetchMenus();
-                      }
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                      _fetchMenus();
                     } catch (e) {
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                     } finally {
                       setModalState(() => isUploading = false);
@@ -255,7 +255,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppColors.caramelGold, size: 20),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: Colors.white.withValues(alpha: 0.05),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           ),
         ),
@@ -291,7 +291,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: 'Cari menu atau kategori...',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
                         border: InputBorder.none,
                         icon: const Icon(Icons.search, color: AppColors.caramelGold),
                         suffixIcon: _searchQuery.isNotEmpty 
@@ -339,7 +339,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: menu.stock == 0 ? Colors.red.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                                              color: menu.stock == 0 ? Colors.red.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
                                               borderRadius: BorderRadius.circular(4),
                                               border: Border.all(color: menu.stock == 0 ? Colors.red : Colors.orange, width: 0.5),
                                             ),
@@ -442,8 +442,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), shape: BoxShape.circle),
-            child: Icon(Icons.restaurant_menu, size: 80, color: AppColors.caramelGold.withOpacity(0.2)),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
+            child: Icon(Icons.restaurant_menu, size: 80, color: AppColors.caramelGold.withValues(alpha: 0.2)),
           ),
           const SizedBox(height: 24),
           const Text('No Menu Items Yet', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
@@ -466,10 +466,9 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
           TextButton(
             onPressed: () async {
               await ApiClient().delete('/admin/menus/${menu.id}');
-              if (mounted) {
-                Navigator.pop(ctx);
-                _fetchMenus();
-              }
+              if (!ctx.mounted) return;
+              Navigator.pop(ctx);
+              if (mounted) _fetchMenus();
             },
             child: const Text('DELETE', style: TextStyle(color: Colors.red)),
           ),

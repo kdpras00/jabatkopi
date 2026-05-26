@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
-import '../main_navigator.dart';
+import '../login_screen.dart';
 import '../widgets/jk_primary_button.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -75,7 +76,7 @@ class _SplashScreenState extends State<SplashScreen> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.caramelGold.withOpacity(0.1),
+                                  color: AppColors.caramelGold.withValues(alpha: 0.1),
                                   blurRadius: 100,
                                   spreadRadius: 20,
                                 )
@@ -115,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               height: 1.5,
-                              color: AppColors.softCream.withOpacity(0.7),
+                              color: AppColors.softCream.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -157,10 +158,19 @@ class _SplashScreenState extends State<SplashScreen> {
                 if (_currentPage == _onboardingData.length - 1)
                   JkPrimaryButton(
                     label: 'MULAI SEKARANG',
-                    onPressed: () {
+                    onPressed: () async {
+                      // Simpan flag agar onboarding tidak muncul lagi
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('has_seen_onboarding', true);
+                      if (!context.mounted) return;
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const MainNavigator()),
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) => const LoginScreen(),
+                          transitionDuration: const Duration(milliseconds: 400),
+                          transitionsBuilder: (_, animation, __, child) =>
+                              FadeTransition(opacity: animation, child: child),
+                        ),
                       );
                     },
                   )

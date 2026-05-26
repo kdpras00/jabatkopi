@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/providers/auth_provider.dart';
 import '../../../core/network/api_client.dart';
 import '../../widgets/jk_glass_card.dart';
 import 'menu_management_screen.dart';
 import 'manage_account_screen.dart';
 import 'table_management_screen.dart';
-import '../../widgets/jk_shimmer.dart';
 import '../../widgets/jk_logout_button.dart';
 
 class AdminDashboardScreen extends StatefulWidget {

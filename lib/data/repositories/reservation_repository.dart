@@ -1,5 +1,4 @@
 import 'package:jabatkopi/core/network/api_client.dart';
-import '../models/reservation_model.dart';
 
 class ReservationRepository {
   final ApiClient apiClient;
@@ -48,6 +47,14 @@ class ReservationRepository {
       return data.cast<Map<String, dynamic>>();
     } catch (e) {
       throw Exception('Failed to get admin reservations: $e');
+    }
+  }
+
+  Future<void> cancelReservation(int id) async {
+    try {
+      await apiClient.put('/reservations/$id/cancel', {});
+    } catch (e) {
+      throw Exception('Failed to cancel reservation: $e');
     }
   }
 }

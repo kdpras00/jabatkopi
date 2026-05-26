@@ -8,10 +8,10 @@ class ReservationSummaryScreen extends StatelessWidget {
   final DateTime date;
   final String time;
   final int guests;
-  final int tableId;
+  final int? tableId; 
   final String qrCode;
   final String bookingId;
-
+  final String? staffNote; 
   const ReservationSummaryScreen({
     super.key,
     required this.date,
@@ -20,12 +20,15 @@ class ReservationSummaryScreen extends StatelessWidget {
     required this.tableId,
     required this.qrCode,
     required this.bookingId,
+    this.staffNote,
   });
 
   @override
   Widget build(BuildContext context) {
+    final tableAssigned = tableId != null && tableId! > 0;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Reservation Ticket')),
+      appBar: AppBar(title: const Text('Tiket Reservasi')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -35,8 +38,8 @@ class ReservationSummaryScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const Text(
-                    'TABLE RESERVATION',
-                    style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.w300),
+                    'RESERVASI MEJA',
+                    style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.w300, color: Colors.white54),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -44,47 +47,125 @@ class ReservationSummaryScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.caramelGold),
                   ),
                   const SizedBox(height: 32),
+
+                  // Meja — ditunjukkan berbeda jika belum diassign
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                     decoration: BoxDecoration(
-                      color: AppColors.caramelGold.withOpacity(0.1),
+                      color: tableAssigned
+                          ? AppColors.caramelGold.withValues(alpha: 0.1)
+                          : Colors.orange.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.caramelGold, width: 2),
+                      border: Border.all(
+                        color: tableAssigned ? AppColors.caramelGold : Colors.orange,
+                        width: 2,
+                      ),
                     ),
                     child: Column(
                       children: [
                         Text(
-                          'ID MEJA',
-                          style: TextStyle(fontSize: 14, color: AppColors.softCream.withOpacity(0.8), letterSpacing: 1.5),
+                          tableAssigned ? 'MEJA' : 'MEJA BELUM DITENTUKAN',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: tableAssigned
+                                ? AppColors.softCream.withValues(alpha: 0.7)
+                                : Colors.orange,
+                            letterSpacing: 1.5,
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          '$tableId',
-                          style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.caramelGold),
-                        ),
+                        if (tableAssigned)
+                          Text(
+                            '$tableId',
+                            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.caramelGold),
+                          )
+                        else ...[
+                          const Icon(Icons.schedule, color: Colors.orange, size: 36),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Staf akan menyiapkan meja\nsaat Anda tiba di cafe',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.orange, fontSize: 13, height: 1.5),
+                          ),
+                        ],
                       ],
                     ),
                   ),
                   const SizedBox(height: 32),
-                  _buildDetailRow('Date', DateFormat('EEEE, dd MMM yyyy').format(date)),
+
+                  _buildDetailRow('Tanggal', DateFormat('EEEE, dd MMM yyyy', 'id_ID').format(date)),
                   const Divider(color: AppColors.glassBorder, height: 32),
-                  _buildDetailRow('Time', time),
+                  _buildDetailRow('Waktu', time),
                   const Divider(color: AppColors.glassBorder, height: 32),
-                  _buildDetailRow('Table', 'Meja $tableId'),
-                  const Divider(color: AppColors.glassBorder, height: 32),
-                  _buildDetailRow('Guests', '$guests People'),
+                  _buildDetailRow('Jumlah Orang', '$guests Orang'),
                   const SizedBox(height: 32),
-                  const Text(
-                    'Silakan sebutkan ID Meja atau Booking ID kepada barista saat Anda tiba.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+
+                  // ─── CATATAN DARI STAF (read-only untuk customer) ───
+                  if (staffNote != null && staffNote!.isNotEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.sticky_note_2_outlined, color: Colors.amber, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'CATATAN DARI STAF',
+                                  style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: Colors.amber, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  staffNote!,
+                                  style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Info check-in
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.caramelGold.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.glassBorder),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline, color: AppColors.caramelGold, size: 18),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Tunjukkan Booking ID atau QR Code ini kepada staf saat Anda tiba. Staf akan melakukan check-in dan menyiapkan meja Anda.',
+                            style: TextStyle(fontSize: 12, color: Colors.white54, height: 1.5),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 40),
             JkPrimaryButton(
-              label: 'BACK TO HOME',
+              label: 'KEMBALI KE BERANDA',
               onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
             ),
           ],
@@ -97,10 +178,9 @@ class ReservationSummaryScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: AppColors.softCream.withOpacity(0.6))),
+        Text(label, style: TextStyle(color: AppColors.softCream.withValues(alpha: 0.6))),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
       ],
     );
   }
 }
-

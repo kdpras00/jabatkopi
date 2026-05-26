@@ -32,10 +32,8 @@ class NotificationService {
 
   Future<bool> requestPermission() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
-      final androidImplementation = _notificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      final bool? granted = true;
-      return granted ?? false;
+      const bool granted = true;
+      return granted;
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       final iosImplementation = _notificationsPlugin
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();

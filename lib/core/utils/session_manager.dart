@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../../ui/login_screen.dart';
 
 class SessionManager extends StatefulWidget {
   final Widget child;
@@ -35,19 +36,25 @@ class _SessionManagerState extends State<SessionManager> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.isAuthenticated) {
       authProvider.logout();
-      
-      // Bersihkan semua stack navigasi
+
       if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        Navigator.of(context).pushAndRemoveUntil(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => const LoginScreen(),
+            transitionDuration: const Duration(milliseconds: 400),
+            transitionsBuilder: (_, animation, __, child) =>
+                FadeTransition(opacity: animation, child: child),
+          ),
+          (route) => false,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sesi berakhir karena tidak aktif. Silakan login kembali.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
-      
-      // Tampilkan info singkat jika perlu
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Session expired due to inactivity.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
     }
   }
 

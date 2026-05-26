@@ -409,7 +409,7 @@ class _OrderMonitorTabState extends State<OrderMonitorTab> {
                     decoration: BoxDecoration(
                       border: Border.all(color: AppColors.caramelGold),
                       borderRadius: BorderRadius.circular(20),
-                      color: AppColors.caramelGold.withOpacity(0.1),
+                      color: AppColors.caramelGold.withValues(alpha: 0.1),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
