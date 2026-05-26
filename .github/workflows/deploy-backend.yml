@@ -22,7 +22,7 @@ jobs:
           key: ${{ secrets.SSH_KEY_PRIVATE }}
           port: 2223
           script: |
-            cd ~/public_html/domains/sdndadap4tangerang.my.id
+            cd ${{ secrets.SSH_TARGET_DIR }}
             echo "📦 Pull latest code from GitHub..."
             git fetch origin
             git reset --hard origin/main
