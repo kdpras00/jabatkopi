@@ -1,0 +1,50 @@
+name: 🚀 Deploy Laravel Backend (SSH)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY_PRIVATE }}
+          port: 2223
+          script: |
+            cd ~/public_html/domains/sdndadap4tangerang.my.id
+            echo "📦 Pull latest code from GitHub..."
+            git fetch origin
+            git reset --hard origin/main
+            
+            # Pindah ke subfolder backend
+            cd backend
+            
+            echo "🧰 Install Composer dependencies..."
+            ~/bin/composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+            
+            echo "📦 Install npm dependencies..."
+            source ~/.nvm/nvm.sh
+            nvm use node
+            npm ci
+            
+            echo "🧩 Build assets..."
+            npm run build
+            
+            echo "🚀 Run Laravel optimizations..."
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            
+            echo "✅ Deploy finished!"
