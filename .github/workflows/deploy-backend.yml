@@ -38,19 +38,22 @@ jobs:
           npm ci
           npm run build
 
-      - name: Sync Backend Files via Rsync (SSH)
-        uses: easingthemes/ssh-deploy@main
-        with:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY_PRIVATE }}
-          ARGS: "-rlgoDzvO" # Tanpa --delete agar file upload dan .env di cPanel tidak terhapus
-          SOURCE: "backend/" # Mengambil isi folder backend/ saja
-          REMOTE_HOST: ${{ secrets.SSH_HOST }}
-          REMOTE_USER: ${{ secrets.SSH_USERNAME }}
-          REMOTE_PORT: 2223
-          TARGET: "~/public_html/domains/jabatkopi"
-          EXCLUDE: "/node_modules/, /tests/, /phpunit.xml, /.env, /storage/app/public/"
+      - name: Create Deployment Zip
+        run: |
+          cd backend
+          zip -r ../deploy.zip . -x "node_modules/*" "tests/*" "phpunit.xml" ".env" "storage/app/public/*"
 
-      - name: Run Laravel Optimizations via SSH
+      - name: Upload Zip via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY_PRIVATE }}
+          port: 2223
+          source: "deploy.zip"
+          target: "~/public_html/domains/jabatkopi"
+
+      - name: Extract Zip and Optimize via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -59,6 +62,10 @@ jobs:
           port: 2223
           script: |
             cd ~/public_html/domains/jabatkopi
+            echo "📦 Extracting backend files..."
+            unzip -o deploy.zip
+            rm deploy.zip
+            
             echo "🚀 Run Laravel optimizations..."
             php artisan migrate --force
             php artisan config:cache
