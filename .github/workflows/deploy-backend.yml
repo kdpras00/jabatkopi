@@ -22,7 +22,7 @@ jobs:
           key: ${{ secrets.SSH_KEY_PRIVATE }}
           port: 2223
           script: |
-            cd ${{ secrets.SSH_TARGET_DIR }}
+            cd ~/public_html/jabatkopi
             echo "📦 Pull latest code from GitHub..."
             git fetch origin
             git reset --hard origin/main
