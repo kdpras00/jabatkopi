@@ -51,7 +51,7 @@ jobs:
           key: ${{ secrets.SSH_KEY_PRIVATE }}
           port: 2223
           source: "deploy.zip"
-          target: "~/public_html/domains/jabatkopi"
+          target: "~/public_html/domains/jabatkopi.my.id"
 
       - name: Extract Zip and Optimize via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -61,7 +61,7 @@ jobs:
           key: ${{ secrets.SSH_KEY_PRIVATE }}
           port: 2223
           script: |
-            TARGET=~/public_html/domains/jabatkopi
+            TARGET=~/public_html/domains/jabatkopi.my.id
             echo "📦 Finding and moving deploy.zip..."
             find $TARGET -name "deploy.zip" | xargs -I{} mv {} $TARGET/deploy.zip
             
