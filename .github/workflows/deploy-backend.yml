@@ -46,7 +46,7 @@ jobs:
           REMOTE_HOST: ${{ secrets.SSH_HOST }}
           REMOTE_USER: ${{ secrets.SSH_USERNAME }}
           REMOTE_PORT: 2223
-          TARGET: "~/public_html/jabatkopi"
+          TARGET: "~/public_html/domains/jabatkopi"
           EXCLUDE: "/node_modules/, /tests/, /phpunit.xml, /.env, /storage/app/public/"
 
       - name: Run Laravel Optimizations via SSH
@@ -57,7 +57,7 @@ jobs:
           key: ${{ secrets.SSH_KEY_PRIVATE }}
           port: 2223
           script: |
-            cd ~/public_html/jabatkopi
+            cd ~/public_html/domains/jabatkopi
             echo "🚀 Run Laravel optimizations..."
             php artisan migrate --force
             php artisan config:cache
