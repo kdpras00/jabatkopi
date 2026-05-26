@@ -1,4 +1,4 @@
-name: 🚀 Deploy Laravel Backend (SSH)
+name: 🚀 Deploy Laravel Backend (Rsync via SSH)
 
 on:
   push:
@@ -14,7 +14,42 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, mysql, zip
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Composer Dependencies
+        run: |
+          cd backend
+          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Install NPM & Build Assets
+        run: |
+          cd backend
+          npm ci
+          npm run build
+
+      - name: Sync Backend Files via Rsync (SSH)
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY_PRIVATE }}
+          ARGS: "-rlgoDzvO" # Tanpa --delete agar file upload dan .env di cPanel tidak terhapus
+          SOURCE: "backend/" # Mengambil isi folder backend/ saja
+          REMOTE_HOST: ${{ secrets.SSH_HOST }}
+          REMOTE_USER: ${{ secrets.SSH_USERNAME }}
+          REMOTE_PORT: 2223
+          TARGET: "~/public_html/jabatkopi"
+          EXCLUDE: "/node_modules/, /tests/, /phpunit.xml, /.env, /storage/app/public/"
+
+      - name: Run Laravel Optimizations via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -23,28 +58,9 @@ jobs:
           port: 2223
           script: |
             cd ~/public_html/jabatkopi
-            echo "📦 Pull latest code from GitHub..."
-            git fetch origin
-            git reset --hard origin/main
-            
-            # Pindah ke subfolder backend
-            cd backend
-            
-            echo "🧰 Install Composer dependencies..."
-            ~/bin/composer install --no-dev --optimize-autoloader --ignore-platform-reqs
-            
-            echo "📦 Install npm dependencies..."
-            source ~/.nvm/nvm.sh
-            nvm use node
-            npm ci
-            
-            echo "🧩 Build assets..."
-            npm run build
-            
             echo "🚀 Run Laravel optimizations..."
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
-            
             echo "✅ Deploy finished!"
