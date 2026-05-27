@@ -29,7 +29,7 @@ class SupabaseConnection extends PostgresConnection
      */
     protected function getDefaultQueryGrammar()
     {
-        return $this->withTablePrefix(new \Illuminate\Database\Query\Grammars\PostgresGrammar);
+        return $this->withTablePrefix(new \Illuminate\Database\Query\Grammars\PostgresGrammar($this));
     }
 
     /**
