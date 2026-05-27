@@ -252,7 +252,7 @@ new class extends Component
         }
         $reservations = $reservationsQuery->get();
 
-        return view('pages.pegawai.⚡dashboard', [
+        return view('pages.pegawai.dashboard', [
             'activeOrdersCount' => $activeOrdersCount,
             'activeReservationsCount' => $activeReservationsCount,
             'orders' => $orders,

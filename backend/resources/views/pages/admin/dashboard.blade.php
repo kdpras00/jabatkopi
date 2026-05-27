@@ -260,7 +260,7 @@ new class extends Component
         $tables = Table::all();
         $menus = Menu::all();
 
-        return view('pages.admin.⚡dashboard', [
+        return view('pages.admin.dashboard', [
             'staff' => $staff,
             'totalUsers' => $totalUsers,
             'totalAdmin' => $totalAdmin,
