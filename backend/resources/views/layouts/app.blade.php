@@ -16,12 +16,34 @@
     @livewireStyles
 </head>
 <body class="font-sans antialiased">
-    <div class="flex w-full min-h-screen">
-        <!-- Sidebar (Shown only to authenticated users) -->
+    <div class="flex w-full min-h-screen" x-data="{ sidebarOpen: false }">
+        <!-- Sidebar Backdrop (Mobile Only) -->
         @auth
-            <aside class="w-[280px] bg-coffee-panel backdrop-blur-md border-r border-coffee-border p-8 flex flex-col justify-between fixed h-screen z-10 max-lg:w-[70px] max-lg:p-2 max-lg:items-center">
+            <div x-show="sidebarOpen" 
+                 @click="sidebarOpen = false" 
+                 class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 lg:hidden"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 style="display: none;">
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="w-[280px] bg-coffee-panel backdrop-blur-md border-r border-coffee-border p-8 flex flex-col justify-between fixed h-screen z-30 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:left-0"
+                   :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+                
+                <!-- Close Button (Mobile Only) -->
+                <button @click="sidebarOpen = false" class="lg:hidden absolute top-6 right-6 text-coffee-muted hover:text-coffee-text focus:outline-none cursor-pointer p-1.5 hover:bg-white/5 rounded-lg border border-coffee-border/20 transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+
                 <div>
-                    <a href="#" class="flex items-center gap-3 mb-12 no-underline text-coffee-text max-lg:hidden">
+                    <a href="#" class="flex items-center gap-3 mb-12 no-underline text-coffee-text">
                         <img src="{{ asset('storage/images/logojabatkopi.png') }}" alt="Jabat Kopi Logo" class="w-8 h-8 object-contain rounded-lg">
                         <span class="text-lg font-extrabold tracking-wider bg-gradient-to-br from-coffee-text via-coffee-text to-coffee-primary bg-clip-text text-transparent">Jabat Kopi</span>
                     </a>
@@ -30,53 +52,53 @@
                         @if(auth()->user()->role === 'admin')
                             <li class="nav-item">
                                 <a href="{{ route('admin.dashboard') }}" 
-                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all max-lg:justify-center {{ request()->routeIs('admin.dashboard') && request('tab', 'overview') === 'overview' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
+                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all {{ request()->routeIs('admin.dashboard') && request('tab', 'overview') === 'overview' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                                    <span class="max-lg:hidden">Dashboard</span>
+                                    <span>Dashboard</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('admin.dashboard') }}?tab=tables" 
-                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all max-lg:justify-center {{ request()->routeIs('admin.dashboard') && request('tab') === 'tables' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
+                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all {{ request()->routeIs('admin.dashboard') && request('tab') === 'tables' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                                    <span class="max-lg:hidden">Kelola Meja</span>
+                                    <span>Kelola Meja</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('admin.dashboard') }}?tab=menus" 
-                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all max-lg:justify-center {{ request()->routeIs('admin.dashboard') && request('tab') === 'menus' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
+                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all {{ request()->routeIs('admin.dashboard') && request('tab') === 'menus' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v2a2 2 0 01-2 2h-2M2 8h15v8a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 1h0M10 1h0M14 1h0"/></svg>
-                                    <span class="max-lg:hidden">Kelola Menu</span>
+                                    <span>Kelola Menu</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('admin.dashboard') }}?tab=staff" 
-                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all max-lg:justify-center {{ request()->routeIs('admin.dashboard') && request('tab') === 'staff' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
+                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all {{ request()->routeIs('admin.dashboard') && request('tab') === 'staff' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                    <span class="max-lg:hidden">Kelola Pegawai</span>
+                                    <span>Kelola Pegawai</span>
                                 </a>
                             </li>
                         @endif
                         @if(auth()->user()->role === 'pegawai')
                             <li class="nav-item">
                                 <a href="{{ route('pegawai.dashboard') }}" 
-                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all max-lg:justify-center {{ request()->routeIs('pegawai.dashboard') && (!request('tab') || request('tab') === 'overview') ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
+                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all {{ request()->routeIs('pegawai.dashboard') && (!request('tab') || request('tab') === 'overview') ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                                    <span class="max-lg:hidden">Dashboard Pegawai</span>
+                                    <span>Dashboard Pegawai</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('pegawai.dashboard') }}?tab=orders" 
-                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all max-lg:justify-center {{ request()->routeIs('pegawai.dashboard') && request('tab') === 'orders' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
+                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all {{ request()->routeIs('pegawai.dashboard') && request('tab') === 'orders' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                                    <span class="max-lg:hidden">Approve Orders</span>
+                                    <span>Approve Orders</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{{ route('pegawai.dashboard') }}?tab=reservations" 
-                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all max-lg:justify-center {{ request()->routeIs('pegawai.dashboard') && request('tab') === 'reservations' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
+                                   class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all {{ request()->routeIs('pegawai.dashboard') && request('tab') === 'reservations' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                    <span class="max-lg:hidden">Approve Reservasi</span>
+                                    <span>Approve Reservasi</span>
                                 </a>
                             </li>
                         @endif
@@ -86,11 +108,18 @@
         @endauth
 
         <!-- Main Content -->
-        <main class="grow min-h-screen {{ auth()->check() ? 'ml-[280px] max-lg:ml-[70px]' : 'p-0 m-0' }}">
+        <main class="grow min-h-screen {{ auth()->check() ? 'lg:ml-[280px] ml-0' : 'p-0 m-0' }}">
             @auth
                 <!-- Top Header Bar -->
                 <header class="h-20 border-b border-coffee-border bg-coffee-panel/30 backdrop-blur-md px-10 max-lg:px-6 flex items-center justify-between sticky top-0 z-20">
-                    <div>
+                    <div class="flex items-center gap-3">
+                        <!-- Hamburger Button (Mobile Only) -->
+                        <button @click="sidebarOpen = true" class="lg:hidden text-coffee-muted hover:text-coffee-text focus:outline-none p-2 border border-coffee-border/40 rounded-lg cursor-pointer hover:bg-white/5 transition-all">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                        </button>
+
                         <!-- Active page/tab title -->
                         @if(auth()->user()->role === 'admin')
                             <h2 class="text-lg font-bold text-coffee-text font-outfit">
