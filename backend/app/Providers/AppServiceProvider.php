@@ -12,7 +12,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->resolving('db', function ($db) {
+            $db->extend('supabase', function ($config, $name) {
+                return new \App\Database\SupabaseConnection($config);
+            });
+        });
     }
 
     /**
@@ -35,10 +39,9 @@ class AppServiceProvider extends ServiceProvider
                 ]);
         });
 
-        $this->app->resolving('db', function ($db) {
-            $db->extend('supabase', function ($config, $name) {
-                return new \App\Database\SupabaseConnection($config);
-            });
+        // Register the driver directly on the DatabaseManager
+        $this->app->make('db')->extend('supabase', function ($config, $name) {
+            return new \App\Database\SupabaseConnection($config);
         });
     }
 }
