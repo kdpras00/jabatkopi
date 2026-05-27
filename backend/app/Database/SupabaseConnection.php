@@ -68,9 +68,10 @@ class SupabaseConnection extends PostgresConnection
      * @param  string  $query
      * @param  array  $bindings
      * @param  bool  $useReadPdo
+     * @param  array  $fetchUsing
      * @return array
      */
-    public function select($query, $bindings = [], $useReadPdo = true)
+    public function select($query, $bindings = [], $useReadPdo = true, array $fetchUsing = [])
     {
         return $this->runQuery($query, $bindings, 'select');
     }
