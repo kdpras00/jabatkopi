@@ -16,7 +16,7 @@
     @livewireStyles
 </head>
 <body class="font-sans antialiased">
-    <div class="flex w-full min-h-screen" x-data="{ sidebarOpen: false }">
+    <div class="flex w-full min-h-screen overflow-x-hidden" x-data="{ sidebarOpen: false }">
         <!-- Sidebar Backdrop (Mobile Only) -->
         @auth
             <div x-show="sidebarOpen" 
@@ -108,7 +108,7 @@
         @endauth
 
         <!-- Main Content -->
-        <main class="grow min-h-screen {{ auth()->check() ? 'lg:ml-[280px] ml-0' : 'p-0 m-0' }}">
+        <main class="grow min-h-screen min-w-0 {{ auth()->check() ? 'lg:ml-[280px] ml-0' : 'p-0 m-0' }}">
             @auth
                 <!-- Top Header Bar -->
                 <header class="h-20 border-b border-coffee-border bg-coffee-panel/30 backdrop-blur-md px-10 max-lg:px-6 flex items-center justify-between sticky top-0 z-20">

@@ -314,7 +314,8 @@ new class extends Component
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-lg text-coffee-text font-semibold">Stok Rendah / Peringatan</h2>
                     </div>
-                    <div class="overflow-x-auto w-full">
+                    <!-- Desktop Table View -->
+                    <div class="hidden sm:block overflow-x-auto w-full">
                         <table class="w-full border-collapse text-left text-sm">
                             <thead>
                                 <tr>
@@ -345,6 +346,28 @@ new class extends Component
                                 @endforelse
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Mobile Card View -->
+                    <div class="block sm:hidden space-y-4">
+                        @forelse($menus->where('stock', '<', 10) as $lowMenu)
+                            <div class="bg-black/30 border border-coffee-border/40 rounded-xl p-4 flex flex-col gap-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold text-coffee-text text-sm">{{ $lowMenu->name }}</span>
+                                    @if($lowMenu->stock == 0)
+                                        <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Habis</span>
+                                    @else
+                                        <span class="bg-coffee-primary/10 text-coffee-primary px-2 py-0.5 rounded text-[10px] font-semibold">Hampir Habis</span>
+                                    @endif
+                                </div>
+                                <div class="flex justify-between text-xs text-coffee-muted">
+                                    <span>Kategori: <strong class="text-coffee-text capitalize">{{ $lowMenu->category }}</strong></span>
+                                    <span>Sisa Stok: <strong class="text-coffee-danger font-bold">{{ $lowMenu->stock }}</strong></span>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center text-coffee-muted py-4 text-sm">Stok semua menu aman dan mencukupi.</div>
+                        @endforelse
                     </div>
                 </div>
 
@@ -381,7 +404,8 @@ new class extends Component
                         Tambah Meja
                     </button>
                 </div>
-                <div class="overflow-x-auto w-full">
+                <!-- Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto w-full">
                     <table class="w-full border-collapse text-left text-sm">
                         <thead>
                             <tr>
@@ -423,6 +447,46 @@ new class extends Component
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="block md:hidden space-y-4">
+                    @forelse($tables as $table)
+                        <div class="bg-black/40 border border-coffee-border/60 rounded-xl p-4 flex flex-col gap-3 shadow-md">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-coffee-muted font-bold">ID: #{{ $table->id }}</span>
+                                @if($table->status === 'available')
+                                    <span class="bg-coffee-success/15 text-coffee-success border border-coffee-success/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Tersedia</span>
+                                @elseif($table->status === 'occupied')
+                                    <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Terisi</span>
+                                @else
+                                    <span class="bg-coffee-primary/15 text-coffee-primary border border-coffee-primary/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{{ $table->status }}</span>
+                                @endif
+                            </div>
+                            
+                            <div class="flex justify-between items-center text-sm border-t border-b border-coffee-border/20 py-2">
+                                <div>
+                                    <span class="block text-xxs text-coffee-muted uppercase">Referensi QR</span>
+                                    <span class="font-semibold text-coffee-text font-mono">{{ $table->qr_code_ref }}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="block text-xxs text-coffee-muted uppercase">Kapasitas</span>
+                                    <span class="font-semibold text-coffee-text">{{ $table->capacity }} Orang</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end gap-2 mt-1">
+                                <button wire:click="editTable({{ $table->id }})" class="py-1.5 px-3 bg-coffee-primary/15 border border-coffee-border text-coffee-primary rounded font-semibold hover:bg-coffee-primary/30 transition-all text-xs cursor-pointer">
+                                    Ubah
+                                </button>
+                                <button onclick="confirmDelete('Hapus Meja?', 'Apakah Anda yakin ingin menghapus meja ini?', () => @this.deleteTable({{ $table->id }}))" class="py-1.5 px-3 bg-coffee-danger/15 border border-coffee-danger/30 text-coffee-danger rounded font-semibold hover:bg-coffee-danger/35 transition-all text-xs cursor-pointer">
+                                    Hapus
+                                </button>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-coffee-muted py-8 text-sm">Belum ada meja terdaftar.</div>
+                    @endforelse
                 </div>
             </div>
         @else
@@ -478,7 +542,8 @@ new class extends Component
                         Tambah Menu
                     </button>
                 </div>
-                <div class="overflow-x-auto w-full">
+                <!-- Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto w-full">
                     <table class="w-full border-collapse text-left text-sm">
                         <thead>
                             <tr>
@@ -530,6 +595,49 @@ new class extends Component
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="block md:hidden space-y-4">
+                    @forelse($menus as $menu)
+                        <div class="bg-black/40 border border-coffee-border/60 rounded-xl p-4 flex flex-col gap-3 shadow-md">
+                            <div class="flex gap-4 items-center">
+                                <div class="w-16 h-16 rounded-lg overflow-hidden border border-coffee-border shrink-0">
+                                    @if($menu->image_url)
+                                        <img src="{{ $menu->image_url }}" alt="{{ $menu->name }}" class="w-full h-full object-cover">
+                                    @else
+                                        <div class="w-full h-full bg-coffee-primary/5 flex items-center justify-center text-coffee-muted text-[10px] font-medium">No Img</div>
+                                    @endif
+                                </div>
+                                <div class="grow min-w-0">
+                                    <div class="flex justify-between items-start gap-2">
+                                        <h4 class="font-bold text-coffee-text text-base truncate">{{ $menu->name }}</h4>
+                                        @if($menu->is_available && $menu->stock > 0)
+                                            <span class="bg-coffee-success/15 text-coffee-success border border-coffee-success/30 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0">Ada</span>
+                                        @else
+                                            <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0">Habis</span>
+                                        @endif
+                                    </div>
+                                    <span class="text-xs text-coffee-muted capitalize">{{ $menu->category }}</span>
+                                    <div class="text-coffee-primary font-bold text-sm mt-1">Rp {{ number_format($menu->price, 0, ',', '.') }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between items-center text-xs border-t border-coffee-border/20 pt-3 mt-1">
+                                <span class="text-coffee-muted">Stok: <strong class="text-coffee-text">{{ $menu->stock }} pcs</strong></span>
+                                <div class="flex gap-2">
+                                    <button wire:click="editMenu({{ $menu->id }})" class="py-1.5 px-3 bg-coffee-primary/15 border border-coffee-border text-coffee-primary rounded font-semibold hover:bg-coffee-primary/30 transition-all text-xs cursor-pointer">
+                                        Ubah
+                                    </button>
+                                    <button onclick="confirmDelete('Hapus Item Menu?', 'Apakah Anda yakin ingin menghapus item menu ini?', () => @this.deleteMenu({{ $menu->id }}))" class="py-1.5 px-3 bg-coffee-danger/15 border border-coffee-danger/30 text-coffee-danger rounded font-semibold hover:bg-coffee-danger/35 transition-all text-xs cursor-pointer">
+                                        Hapus
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-coffee-muted py-8 text-sm">Belum ada item menu terdaftar.</div>
+                    @endforelse
                 </div>
             </div>
         @else
@@ -650,7 +758,8 @@ new class extends Component
                         Tambah Pegawai
                     </button>
                 </div>
-                <div class="overflow-x-auto w-full">
+                <!-- Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto w-full">
                     <table class="w-full border-collapse text-left text-sm">
                         <thead>
                             <tr>
@@ -690,6 +799,38 @@ new class extends Component
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="block md:hidden space-y-4">
+                    @forelse($staff as $user)
+                        <div class="bg-black/40 border border-coffee-border/60 rounded-xl p-4 flex flex-col gap-2 shadow-md">
+                            <div class="flex justify-between items-center">
+                                <h4 class="font-bold text-coffee-text text-base">{{ $user->name }}</h4>
+                                @if($user->role === 'admin')
+                                    <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Admin</span>
+                                @else
+                                    <span class="bg-coffee-primary/15 text-coffee-primary border border-coffee-primary/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Pegawai</span>
+                                @endif
+                            </div>
+                            
+                            <div class="text-xs text-coffee-muted space-y-1.5 py-2 border-t border-b border-coffee-border/20 my-1">
+                                <div class="flex justify-between"><span class="uppercase text-xxs">Username:</span><span class="font-semibold text-coffee-text">{{ $user->username }}</span></div>
+                                <div class="flex justify-between"><span class="uppercase text-xxs">Email:</span><span class="font-semibold text-coffee-text">{{ $user->email }}</span></div>
+                            </div>
+                            
+                            <div class="flex justify-end gap-2 mt-1">
+                                <button wire:click="editStaff({{ $user->id }})" class="py-1.5 px-3 bg-coffee-primary/15 border border-coffee-border text-coffee-primary rounded font-semibold hover:bg-coffee-primary/30 transition-all text-xs cursor-pointer">
+                                    Ubah
+                                </button>
+                                <button onclick="confirmDelete('Hapus Akun Pegawai?', 'Apakah Anda yakin ingin menghapus akun staff ini?', () => @this.deleteStaff({{ $user->id }}))" class="py-1.5 px-3 bg-coffee-danger/15 border border-coffee-danger/30 text-coffee-danger rounded font-semibold hover:bg-coffee-danger/35 transition-all text-xs cursor-pointer" {{ $user->id === auth()->user()->id ? 'disabled style=opacity:0.4;cursor:default;' : '' }}>
+                                    Hapus
+                                </button>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-coffee-muted py-8 text-sm">Belum ada pegawai terdaftar.</div>
+                    @endforelse
                 </div>
             </div>
         @else
