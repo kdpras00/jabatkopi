@@ -42,31 +42,38 @@ class _AppStartupRouterState extends State<AppStartupRouter>
   Future<void> _resolveStartup() async {
     if (!mounted) return;
 
-    // Capture context-dependent objects BEFORE any awaits
-    final navigator = Navigator.of(context);
-    final authProvider = context.read<AuthProvider>();
+    try {
+      // Capture context-dependent objects BEFORE any awaits
+      final navigator = Navigator.of(context);
+      final authProvider = context.read<AuthProvider>();
 
-    // Tunggu animasi logo singkat
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
+      // Tunggu animasi logo singkat
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (!mounted) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
 
-    // Onboarding belum pernah dilihat → tampilkan onboarding
-    if (!hasSeenOnboarding) {
-      navigator.pushReplacement(_buildRoute(const SplashScreen()));
-      return;
-    }
+      // Onboarding belum pernah dilihat → tampilkan onboarding
+      if (!hasSeenOnboarding) {
+        navigator.pushReplacement(_buildRoute(const SplashScreen()));
+        return;
+      }
 
-    // Sudah pernah buka → coba restore session
-    final restored = await authProvider.tryRestoreSession();
-    if (!mounted) return;
+      // Sudah pernah buka → coba restore session
+      final restored = await authProvider.tryRestoreSession();
+      if (!mounted) return;
 
-    if (restored) {
-      navigator.pushReplacement(_buildRoute(const CustomerHomeScreen()));
-    } else {
-      navigator.pushReplacement(_buildRoute(const LoginScreen()));
+      if (restored) {
+        navigator.pushReplacement(_buildRoute(const CustomerHomeScreen()));
+      } else {
+        navigator.pushReplacement(_buildRoute(const LoginScreen()));
+      }
+    } catch (e, stack) {
+      debugPrint('Startup resolve error: $e\n$stack');
+      if (mounted) {
+        Navigator.of(context).pushReplacement(_buildRoute(const LoginScreen()));
+      }
     }
   }
 
