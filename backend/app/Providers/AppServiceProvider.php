@@ -34,5 +34,11 @@ class AppServiceProvider extends ServiceProvider
                     'Accept' => 'application/json',
                 ]);
         });
+
+        $this->app->resolving('db', function ($db) {
+            $db->extend('supabase', function ($config, $name) {
+                return new \App\Database\SupabaseConnection($config);
+            });
+        });
     }
 }
