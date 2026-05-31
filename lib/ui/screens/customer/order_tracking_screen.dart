@@ -32,8 +32,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     super.initState();
     _orderRepo = OrderRepository(apiClient: ApiClient());
     _fetchOrder();
-    // Polling berkala ke backend Go GORM setiap 3 detik untuk pembaruan real-time
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchOrder());
+    // Polling berkala ke backend Go GORM setiap 10 detik untuk pembaruan real-time
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchOrder());
   }
 
   @override
@@ -51,9 +51,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           _isLoading = false;
         });
       }
-    } catch (_) {
-      if (mounted && _order == null) {
+    } catch (e) {
+      if (mounted) {
         setState(() => _isLoading = false);
+        if (_order == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal mengambil data. Periksa koneksi internet Anda.')),
+          );
+        }
       }
     }
   }

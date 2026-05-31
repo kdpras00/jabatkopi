@@ -169,7 +169,7 @@ class _StaffOverviewTabState extends State<StaffOverviewTab> {
     _orderRepo = OrderRepository(apiClient: ApiClient());
     _reservationRepo = ReservationRepository(apiClient: ApiClient());
     _fetchCounts();
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchCounts());
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchCounts());
   }
 
   @override
@@ -190,6 +190,9 @@ class _StaffOverviewTabState extends State<StaffOverviewTab> {
       }
     } catch (e) {
       // Keep existing counts if polling fails temporarily
+      if (mounted && _activeOrdersCount == 0 && _reservationsCount == 0) {
+        // Option to show a subtle offline indicator could go here
+      }
     }
   }
 
@@ -315,7 +318,7 @@ class _OrderMonitorTabState extends State<OrderMonitorTab> {
     super.initState();
     _orderRepo = OrderRepository(apiClient: ApiClient());
     _fetchOrders();
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchOrders());
+    _timer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchOrders());
   }
 
   @override
@@ -339,7 +342,14 @@ class _OrderMonitorTabState extends State<OrderMonitorTab> {
         _lastOrderCount = _orders.length;
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (_orders.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Koneksi terputus. Menunggu jaringan...')),
+          );
+        }
+      }
     }
   }
 

@@ -59,6 +59,8 @@ class _SplashScreenState extends State<SplashScreen> {
                     data['bg']!,
                     fit: BoxFit.cover,
                     opacity: const AlwaysStoppedAnimation(0.15),
+                    cacheHeight: 800,
+                    errorBuilder: (context, error, stackTrace) => Container(color: AppColors.charcoal),
                   ),
                   // Content centered
                   Center(
