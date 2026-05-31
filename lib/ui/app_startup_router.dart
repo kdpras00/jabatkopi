@@ -6,12 +6,9 @@ import '../core/theme/app_colors.dart';
 import 'screens/splash_screen.dart';
 import 'login_screen.dart';
 import 'screens/customer/home_screen.dart';
+import 'main_navigator.dart';
 
-/// Gerbang utama app. Dijalankan sekali saat startup untuk menentukan
-/// halaman mana yang harus ditampilkan:
-/// - Onboarding  → belum pernah buka app (install pertama kali)
-/// - LoginScreen → sudah pernah buka tapi belum login / session expired
-/// - HomeScreen  → sudah login sebelumnya (auto-resume)
+
 class AppStartupRouter extends StatefulWidget {
   const AppStartupRouter({super.key});
 
@@ -65,7 +62,7 @@ class _AppStartupRouterState extends State<AppStartupRouter>
       if (!mounted) return;
 
       if (restored) {
-        navigator.pushReplacement(_buildRoute(const CustomerHomeScreen()));
+        navigator.pushReplacement(_buildRoute(const MainNavigator()));
       } else {
         navigator.pushReplacement(_buildRoute(const LoginScreen()));
       }

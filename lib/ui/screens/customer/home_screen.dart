@@ -21,6 +21,7 @@ import 'order_tracking_screen.dart';
 import 'edit_profile_screen.dart';
 import 'security_screen.dart';
 import 'notification_screen.dart';
+import 'dart:convert';
 
 class CustomerHomeScreen extends StatefulWidget {
   const CustomerHomeScreen({super.key});
@@ -556,9 +557,11 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                               child: CircleAvatar(
                                 radius: 45,
                                 backgroundColor: AppColors.darkGrey,
-                                backgroundImage: (imageUrl != null && imageUrl.isNotEmpty) 
-                                  ? NetworkImage(imageUrl) 
-                                  : null,
+                                backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+                              ? (imageUrl.startsWith('data:image')
+                                  ? MemoryImage(base64Decode(imageUrl.split(',').last))
+                                  : NetworkImage(imageUrl)) as ImageProvider
+                              : null,
                                 child: (imageUrl == null || imageUrl.isEmpty)
                                   ? const Icon(Icons.person, size: 50, color: AppColors.caramelGold)
                                   : null,

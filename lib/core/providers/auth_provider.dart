@@ -89,14 +89,17 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _storage.delete(key: 'jwt_token');
-    await _storage.delete(key: 'user_role');
-    await _storage.delete(key: 'username');
-    await _storage.delete(key: 'user_id');
     _role = null;
     _username = null;
     _userId = null;
     _isAuthenticated = false;
     notifyListeners();
+
+    await Future.wait([
+      _storage.delete(key: 'jwt_token'),
+      _storage.delete(key: 'user_role'),
+      _storage.delete(key: 'username'),
+      _storage.delete(key: 'user_id'),
+    ]);
   }
 }

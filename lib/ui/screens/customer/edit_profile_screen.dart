@@ -105,7 +105,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           backgroundColor: AppColors.darkGrey,
                           backgroundImage: _pickedImage != null 
                             ? (kIsWeb ? NetworkImage(_pickedImage!.path) : FileImage(File(_pickedImage!.path)) as ImageProvider)
-                            : (_imageUrl != null && _imageUrl!.isNotEmpty ? NetworkImage(_imageUrl!) : null),
+                            : (_imageUrl != null && _imageUrl!.isNotEmpty 
+                                ? (_imageUrl!.startsWith('data:image') 
+                                    ? MemoryImage(base64Decode(_imageUrl!.split(',').last)) 
+                                    : NetworkImage(_imageUrl!)) as ImageProvider
+                                : null),
                           child: (_pickedImage == null && (_imageUrl == null || _imageUrl!.isEmpty))
                             ? const Icon(Icons.person, size: 50, color: AppColors.caramelGold)
                             : null,
