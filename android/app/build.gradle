@@ -49,8 +49,6 @@ android {
 }
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
         }
     }
@@ -62,18 +60,5 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
-}
-
-// Automatically copy built APKs back to the project's local directory so the Flutter CLI can find them.
-tasks.whenTaskAdded { task ->
-    if (task.name.startsWith('assemble')) {
-        task.doLast {
-            copy {
-                from "${rootProject.buildDir}/app/outputs/flutter-apk"
-                into "${project.projectDir}/../../build/app/outputs/flutter-apk"
-                include "*.apk"
-            }
-        }
-    }
 }
 
