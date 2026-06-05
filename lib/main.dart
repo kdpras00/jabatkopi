@@ -15,7 +15,6 @@ void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
 
-   ``
     GoogleFonts.config.allowRuntimeFetching = false;
 
     try {
