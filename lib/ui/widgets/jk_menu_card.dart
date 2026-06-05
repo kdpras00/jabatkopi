@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/menu_model.dart';
 import '../widgets/jk_glass_card.dart';
@@ -28,7 +29,7 @@ class JkMenuCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     image: DecorationImage(
-                      image: NetworkImage(menu.imageUrl.isNotEmpty 
+                      image: CachedNetworkImageProvider(menu.imageUrl.isNotEmpty 
                           ? menu.imageUrl 
                           : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=400'),
                       fit: BoxFit.cover,
