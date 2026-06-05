@@ -367,10 +367,13 @@ new class extends Component
                                             @endforeach
                                         </select>
                                     @else
-                                        <div class="flex items-center justify-start gap-1.5 font-bold text-coffee-text">
-                                            <span>{{ $order->table->qr_code_ref }}</span>
+                                        <div class="flex flex-col items-start gap-1.5">
+                                            <span class="font-bold text-coffee-text">{{ $order->table->qr_code_ref }}</span>
                                             @if($order->table->status === 'occupied')
-                                                <button wire:click="freeTable({{ $order->id }})" title="Selesaikan Sesi & Bebaskan Meja" class="text-xxs text-coffee-danger hover:text-coffee-danger/80 cursor-pointer ml-1">✕ Bebaskan</button>
+                                                <button wire:click="freeTable({{ $order->id }})" title="Selesaikan Sesi & Bebaskan Meja" class="flex items-center gap-1 text-[10px] px-2 py-0.5 bg-coffee-danger/10 border border-coffee-danger/20 text-coffee-danger rounded hover:bg-coffee-danger/20 transition-colors cursor-pointer">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                    Bebaskan
+                                                </button>
                                             @endif
                                         </div>
                                     @endif
@@ -480,10 +483,13 @@ new class extends Component
                                         @endforeach
                                     </select>
                                 @else
-                                    <div class="flex items-center gap-1.5 font-bold text-coffee-text">
-                                        <span>{{ $order->table->qr_code_ref }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-coffee-text">{{ $order->table->qr_code_ref }}</span>
                                         @if($order->table->status === 'occupied')
-                                            <button wire:click="freeTable({{ $order->id }})" class="text-[10px] text-coffee-danger hover:text-coffee-danger/80 cursor-pointer">✕ Bebaskan</button>
+                                            <button wire:click="freeTable({{ $order->id }})" class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-coffee-danger/10 border border-coffee-danger/20 text-coffee-danger rounded hover:bg-coffee-danger/20 transition-colors cursor-pointer">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                Bebaskan
+                                            </button>
                                         @endif
                                     </div>
                                 @endif
