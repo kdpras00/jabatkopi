@@ -5,7 +5,6 @@ import '../core/providers/auth_provider.dart';
 import '../core/theme/app_colors.dart';
 import 'screens/splash_screen.dart';
 import 'login_screen.dart';
-import 'screens/customer/home_screen.dart';
 import 'main_navigator.dart';
 
 

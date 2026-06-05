@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/cart_provider.dart';
@@ -13,6 +14,9 @@ String? initError;
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
+
+   
+    GoogleFonts.config.allowRuntimeFetching = false;
 
     try {
       await Supabase.initialize(
