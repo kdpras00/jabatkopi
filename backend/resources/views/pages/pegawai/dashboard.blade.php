@@ -40,6 +40,12 @@ new class extends Component
         if ($order) {
             $oldStatus = $order->status;
             
+            // Validasi: Pastikan meja sudah dipilih sebelum memproses pesanan
+            if ($status !== 'cancelled' && empty($order->table_id)) {
+                $this->dispatch('toast', text: "Gagal: Anda harus memilih nomor meja terlebih dahulu sebelum mengubah status pesanan.", type: 'error');
+                return;
+            }
+
             // Validasi transisi status (Linear/Sekuensial)
             $allowedTransitions = [
                 'pending' => ['processing', 'cancelled'],
