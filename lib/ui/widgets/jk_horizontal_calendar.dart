@@ -38,10 +38,10 @@ class _JkHorizontalCalendarState extends State<JkHorizontalCalendar> {
               width: 70,
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.caramelGold : AppColors.glassBackground,
+                color: isSelected ? AppColors.caramelGold : AppColors.darkGrey,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isSelected ? AppColors.caramelGold : AppColors.glassBorder,
+                  color: isSelected ? AppColors.caramelGold : AppColors.borderGrey,
                 ),
               ),
               child: Column(

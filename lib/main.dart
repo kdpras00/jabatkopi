@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/cart_provider.dart';
@@ -15,38 +13,11 @@ void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
 
-    GoogleFonts.config.allowRuntimeFetching = false;
-
-    try {
-      await Supabase.initialize(
-        url: 'https://tmudxkcovejdrweucpjl.supabase.co',
-        anonKey: 'sb_publishable_cG85tYuK5oYYN-0ZxUqiMg_wlCvJvKO',
-      );
-    } catch (e) {
-      initError = "Supabase Init Error: $e";
-      debugPrint(initError);
-    }
-
-    if (initError == null) {
-      try {
-        await initializeDateFormatting('id_ID', null);
-        await initializeDateFormatting('id', null);
-        Intl.defaultLocale = 'id_ID';
-      } catch (e) {
-        initError = "Locale Init Error: $e";
-        debugPrint(initError);
-      }
-    }
-
-    if (initError == null) {
-      try {
-        await Supabase.instance.client.auth.signOut();
-      } catch (e) {
-        debugPrint('Supabase signOut error on startup: $e');
-      }
-    }
+    await initializeDateFormatting('id_ID', null);
+    await initializeDateFormatting('id', null);
+    Intl.defaultLocale = 'id_ID';
   } catch (e) {
-    initError = "Critical Init Error: $e";
+    initError = "Init Error: $e";
     debugPrint(initError);
   }
 

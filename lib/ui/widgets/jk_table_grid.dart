@@ -44,8 +44,8 @@ class JkTableGrid extends StatelessWidget {
         final isSelected = selectedTableId == id;
         
         // Color logic
-        Color bgColor = AppColors.glassBackground;
-        Color borderColor = AppColors.glassBorder;
+        Color bgColor = AppColors.darkGrey;
+        Color borderColor = AppColors.borderGrey;
         Color textColor = AppColors.softCream;
         bool isSelectable = true;
 

@@ -107,7 +107,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           children: [
                             _buildTopItemRow(item['name'], '${item['sales']} sales'),
                             if (item != (_analytics?['top_items'] as List).last)
-                              const Divider(color: AppColors.glassBorder),
+                              const Divider(color: AppColors.borderGrey),
                           ],
                         );
                       }).toList(),

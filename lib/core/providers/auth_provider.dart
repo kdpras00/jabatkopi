@@ -4,12 +4,10 @@ import '../../data/repositories/auth_repository.dart';
 import '../../core/network/api_client.dart';
 
 class AuthProvider with ChangeNotifier {
+  final ApiClient _apiClient = ApiClient();
   final AuthRepository _authRepository = AuthRepository(apiClient: ApiClient());
-  final FlutterSecureStorage _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
-  );
+
+  FlutterSecureStorage get _storage => _apiClient.secureStorage;
 
   String? _role;
   String? _username;

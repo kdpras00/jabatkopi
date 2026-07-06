@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/network/api_client.dart';
 import '../../../data/models/order_model.dart';
@@ -306,7 +305,6 @@ class OrderMonitorTab extends StatefulWidget {
 }
 
 class _OrderMonitorTabState extends State<OrderMonitorTab> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
   late OrderRepository _orderRepo;
   List<OrderModel> _orders = [];
   bool _isLoading = true;
@@ -353,9 +351,9 @@ class _OrderMonitorTabState extends State<OrderMonitorTab> {
     }
   }
 
-  void _playNotification() async {
+  void _playNotification() {
     HapticFeedback.heavyImpact();
-    await _audioPlayer.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
+    SystemSound.play(SystemSoundType.alert);
   }
 
   Future<void> _updateStatus(int id, String status) async {

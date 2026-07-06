@@ -17,6 +17,12 @@ class CartProvider with ChangeNotifier {
   List<CartItem> get items => _items;
   int? get tableId => _tableId;
 
+  int getQuantity(int menuId) {
+    final index = _items.indexWhere((item) => item.menu.id == menuId);
+    if (index >= 0) return _items[index].quantity;
+    return 0;
+  }
+
   double get subtotal {
     return _items.fold(0.0, (sum, item) => sum + item.totalPrice);
   }

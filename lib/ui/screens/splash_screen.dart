@@ -40,6 +40,12 @@ class _SplashScreenState extends State<SplashScreen> {
   ];
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.charcoal,
@@ -76,28 +82,33 @@ class _SplashScreenState extends State<SplashScreen> {
                             height: 220,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
+                              color: AppColors.darkGrey,
+                              border: Border.all(color: AppColors.caramelGold, width: 3),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.caramelGold.withValues(alpha: 0.1),
-                                  blurRadius: 100,
-                                  spreadRadius: 20,
+                                  color: AppColors.caramelGold.withValues(alpha: 0.25),
+                                  blurRadius: 80,
+                                  spreadRadius: 8,
                                 )
                               ],
                             ),
-                            child: ClipOval(
-                              child: data.containsKey('isLocalAsset')
-                                  ? Image.asset(
-                                      data['image']!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          const Icon(Icons.coffee, size: 100, color: AppColors.caramelGold),
-                                    )
-                                  : Image.network(
-                                      data['image']!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          const Icon(Icons.coffee, size: 100, color: AppColors.caramelGold),
-                                    ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: ClipOval(
+                                child: data.containsKey('isLocalAsset')
+                                    ? Image.asset(
+                                        data['image']!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            const Icon(Icons.coffee, size: 80, color: AppColors.caramelGold),
+                                      )
+                                    : Image.network(
+                                        data['image']!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            const Icon(Icons.coffee, size: 80, color: AppColors.caramelGold),
+                                      ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 60),

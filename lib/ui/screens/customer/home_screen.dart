@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:async';
+import 'dart:math' as math;
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/cart_provider.dart';
@@ -12,8 +16,10 @@ import '../../../data/repositories/order_repository.dart';
 import '../../../data/repositories/reservation_repository.dart';
 import '../../../core/network/api_client.dart';
 import '../../widgets/jk_glass_card.dart';
+import '../../widgets/jk_skeleton.dart';
+import '../../widgets/jk_page_route.dart';
 import '../../widgets/jk_menu_card.dart';
-import '../../widgets/jk_primary_button.dart';
+import '../../widgets/jk_virtual_pager_disc.dart';
 import 'reservation_screen.dart';
 import 'reservation_summary_screen.dart';
 import 'cart_screen.dart';
@@ -22,6 +28,8 @@ import 'edit_profile_screen.dart';
 import 'security_screen.dart';
 import 'notification_screen.dart';
 import 'dart:convert';
+import '../../../core/utils/js_helper.dart'
+    if (dart.library.js) '../../../core/utils/js_helper_web.dart' as jsh;
 
 class CustomerHomeScreen extends StatefulWidget {
   const CustomerHomeScreen({super.key});
@@ -40,23 +48,269 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     const CustomerProfileTab(),
   ];
 
+  // Pager Checking and Buzzer states
+  Timer? _activeOrdersTimer;
+  final Set<int> _silencedOrderIds = {};
+  OrderModel? _ringingOrder;
+  bool _buzzerActive = false;
+  Timer? _buzzerTimer;
+  bool _pagerPermissionGranted = false;
+  bool _hasCheckedPermissionOnPrefs = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPagerPermissionPref();
+    _startActiveOrdersPolling();
+  }
+
+  @override
+  void dispose() {
+    _activeOrdersTimer?.cancel();
+    _buzzerTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadPagerPermissionPref() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final granted = prefs.getBool('pager_permission_granted') ?? false;
+      if (mounted) {
+        setState(() {
+          _pagerPermissionGranted = granted;
+          _hasCheckedPermissionOnPrefs = true;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _savePagerPermissionPref(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('pager_permission_granted', value);
+    } catch (_) {}
+  }
+
+  void _startActiveOrdersPolling() {
+    // Poll every 8 seconds for active orders
+    _activeOrdersTimer = Timer.periodic(const Duration(seconds: 8), (_) => _checkActiveOrders());
+    // Run an initial check after 2 seconds
+    Timer(const Duration(seconds: 2), () => _checkActiveOrders());
+  }
+
+  Future<void> _checkActiveOrders() async {
+    if (!mounted) return;
+    try {
+      final repo = OrderRepository(apiClient: ApiClient());
+      final activeOrders = await repo.getActiveOrders();
+      
+      if (!mounted) return;
+
+      // Find any order in 'ready' status that has not been silenced yet
+      OrderModel? readyOrder;
+      for (final order in activeOrders) {
+        if (order.status == 'ready' && !_silencedOrderIds.contains(order.id)) {
+          readyOrder = order;
+          break;
+        }
+      }
+
+      if (readyOrder != null) {
+        if (_ringingOrder?.id != readyOrder.id) {
+          setState(() {
+            _ringingOrder = readyOrder;
+          });
+          if (_pagerPermissionGranted) {
+            _startBuzzerLoop();
+          } else {
+            _checkAndRequestBuzzerPermission();
+          }
+        }
+      } else {
+        // If no ready orders, or currently ringing order is completed/cancelled, stop buzzer
+        if (_ringingOrder != null) {
+          _stopBuzzer();
+        }
+      }
+    } catch (_) {
+      // Quietly ignore network/auth errors in background check
+    }
+  }
+
+  void _startBuzzerLoop() {
+    if (_buzzerTimer != null || _ringingOrder == null || !_pagerPermissionGranted) return;
+    
+    setState(() {
+      _buzzerActive = true;
+    });
+
+    HapticFeedback.vibrate();
+    jsh.playWebBeep();
+
+    _buzzerTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
+      HapticFeedback.vibrate();
+      jsh.playWebBeep();
+    });
+  }
+
+  void _stopBuzzer() {
+    _buzzerTimer?.cancel();
+    _buzzerTimer = null;
+    if (_ringingOrder != null) {
+      _silencedOrderIds.add(_ringingOrder!.id);
+    }
+    setState(() {
+      _ringingOrder = null;
+      _buzzerActive = false;
+    });
+  }
+
+  Future<void> _checkAndRequestBuzzerPermission() async {
+    if (_pagerPermissionGranted) return;
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.charcoal,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.notifications_active, color: AppColors.caramelGold),
+            const SizedBox(width: 8),
+            const Text('Notifikasi Pager Antrean', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Aktifkan getaran dan suara pager agar Anda tahu persis kapan kopi siap diambil di meja barista?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('LEWATI', style: TextStyle(color: Colors.white30)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('AKTIFKAN', style: TextStyle(color: AppColors.caramelGold, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (mounted) {
+      final granted = result == true;
+      setState(() {
+        _pagerPermissionGranted = granted;
+      });
+      _savePagerPermissionPref(granted);
+      if (granted && _ringingOrder != null) {
+        _startBuzzerLoop();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        backgroundColor: AppColors.charcoal,
-        selectedItemColor: AppColors.caramelGold,
-        unselectedItemColor: AppColors.softCream.withValues(alpha: 0.5),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Orders'),
-          BottomNavigationBarItem(icon: Icon(Icons.book_online), label: 'Booking'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
+    final cartProvider = context.watch<CartProvider>();
+    final cartCount = cartProvider.items.length;
+    final totalAmount = cartProvider.totalAmount;
+
+    return Stack(
+      children: [
+        Scaffold(
+          body: _screens[_currentIndex],
+          floatingActionButton: cartCount > 0
+              ? FloatingActionButton.extended(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CustomerCartScreen()),
+                  ),
+                  backgroundColor: AppColors.caramelGold,
+                  icon: const Icon(Icons.shopping_cart, color: AppColors.charcoal),
+                  label: Text(
+                    'CHECKOUT ($cartCount)',
+                    style: const TextStyle(color: AppColors.charcoal, fontWeight: FontWeight.bold),
+                  ),
+                )
+              : null,
+          extendBody: true,
+          bottomNavigationBar: SafeArea(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.darkGrey,
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10)),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(0, Icons.home_outlined, 'Home'),
+                  _buildNavItem(1, Icons.receipt_long_outlined, 'Orders'),
+                  _buildNavItem(2, Icons.calendar_month_outlined, 'Booking'),
+                  _buildNavItem(3, Icons.person_outline, 'Profile'),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (_ringingOrder != null && _pagerPermissionGranted)
+          Positioned.fill(
+            child: Container(
+              color: AppColors.charcoal,
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: JkVirtualPagerDisc(
+                    isActive: _buzzerActive,
+                    onSilence: _stopBuzzer,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.caramelGold.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: isSelected ? AppColors.caramelGold : Colors.white54,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.caramelGold,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ]
+          ],
+        ),
       ),
     );
   }
@@ -72,6 +326,7 @@ class MenuCatalogTab extends StatefulWidget {
 class _MenuCatalogTabState extends State<MenuCatalogTab> {
   List<MenuModel> _menus = [];
   bool _isLoading = true;
+  String _selectedCategory = 'All';
 
   @override
   void initState() {
@@ -96,31 +351,71 @@ class _MenuCatalogTabState extends State<MenuCatalogTab> {
 
   @override
   Widget build(BuildContext context) {
+    final displayedMenus = _selectedCategory == 'All' 
+        ? _menus 
+        : _menus.where((m) => m.category == _selectedCategory).toList();
+    final categories = ['All', ..._menus.map((m) => m.category).toSet()];
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('JABAT KOPI'),
-        actions: [
-          _buildCartAction(context),
-          IconButton(
-            icon: const Icon(Icons.event_seat),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerReservationScreen())),
-          ),
-        ],
-      ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.caramelGold))
+          ? ListView.builder(itemCount: 6, itemBuilder: (c, i) => const JkSkeleton(height: 120, margin: EdgeInsets.all(16)))
           : RefreshIndicator(
               onRefresh: _fetchMenus,
               color: AppColors.caramelGold,
               backgroundColor: AppColors.darkGrey,
               child: CustomScrollView(
                 slivers: [
+                  SliverAppBar(
+                    floating: true,
+                    backgroundColor: AppColors.charcoal,
+                    elevation: 0,
+                    title: const Text(
+                      'JABAT KOPI',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white, letterSpacing: 1.5),
+                    ),
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.event_seat_outlined, color: AppColors.caramelGold),
+                        onPressed: () => Navigator.push(context, JkPageRoute(page: const CustomerReservationScreen())),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
                   const SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.only(left: 16, top: 16, right: 16, bottom: 8),
                       child: Text('Explore Our Collection', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.caramelGold)),
                     ),
                   ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 50,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          final cat = categories[index];
+                          final isSelected = cat == _selectedCategory;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ChoiceChip(
+                              label: Text(cat, style: TextStyle(color: isSelected ? AppColors.charcoal : Colors.white)),
+                              selected: isSelected,
+                              selectedColor: AppColors.caramelGold,
+                              backgroundColor: AppColors.darkGrey,
+                              onSelected: (bool selected) {
+                                if (selected) {
+                                  setState(() => _selectedCategory = cat);
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverGrid(
@@ -131,21 +426,31 @@ class _MenuCatalogTabState extends State<MenuCatalogTab> {
                         crossAxisSpacing: 16,
                       ),
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) => JkMenuCard(
-                          menu: _menus[index],
-                          onAdd: () {
-                            final success = context.read<CartProvider>().addItem(_menus[index]);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(success 
-                                    ? '${_menus[index].name} ditambahkan ke keranjang' 
-                                    : 'Stok ${_menus[index].name} terbatas!'),
-                                backgroundColor: success ? Colors.green : Colors.orange,
-                              ),
-                            );
-                          },
-                        ),
-                        childCount: _menus.length,
+                        (context, index) {
+                          final menu = displayedMenus[index];
+                          final cartQuantity = context.watch<CartProvider>().getQuantity(menu.id);
+                          
+                          return JkMenuCard(
+                            menu: menu,
+                            cartQuantity: cartQuantity,
+                            onAdd: () {
+                              final success = context.read<CartProvider>().addItem(menu);
+                              if (!success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Stok ${menu.name} terbatas!'),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+                              }
+                            },
+                            onRemove: () {
+                              final newQty = cartQuantity - 1;
+                              context.read<CartProvider>().updateQuantity(menu.id, newQty);
+                            },
+                          );
+                        },
+                        childCount: displayedMenus.length,
                       ),
                     ),
                   ),
@@ -191,6 +496,16 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
     }
   }
 
+  Widget _buildSkeletonList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return const JkSkeleton(height: 140, margin: EdgeInsets.only(bottom: 16));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -199,9 +514,13 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
         actions: [_buildCartAction(context)],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.caramelGold))
+          ? _buildSkeletonList()
           : _orders.isEmpty
-              ? const Center(child: Text('No orders yet', style: TextStyle(color: AppColors.softCream)))
+              ? _buildEmptyState(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'Belum Ada Pesanan',
+                  description: 'Yuk, cari dan nikmati kopi favoritmu sekarang juga!',
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _orders.length,
@@ -217,45 +536,112 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
                       case 'cancelled': badgeColor = Colors.redAccent; break;
                       default: badgeColor = Colors.grey;
                     }
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: JkGlassCard(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Order #${order.id}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: badgeColor.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: badgeColor.withValues(alpha: 0.6)),
+
+                    String statusLabel;
+                    switch (order.status) {
+                      case 'pending': statusLabel = 'Menunggu'; break;
+                      case 'processing': statusLabel = 'Diproses'; break;
+                      case 'preparing': statusLabel = 'Dibuat'; break;
+                      case 'ready': statusLabel = 'Siap Diambil'; break;
+                      case 'completed': statusLabel = 'Selesai'; break;
+                      case 'cancelled': statusLabel = 'Dibatalkan'; break;
+                      default: statusLabel = order.status;
+                    }
+
+                    String dateStr = '';
+                    try {
+                      final parsedDate = DateTime.parse(order.createdAt).toLocal();
+                      dateStr = DateFormat('dd MMM yyyy, HH:mm').format(parsedDate);
+                    } catch (e) {
+                      dateStr = order.createdAt;
+                    }
+
+                    String orderSummary = '';
+                    if (order.items.isEmpty) {
+                      orderSummary = 'Tanpa Menu';
+                    } else if (order.items.length == 1) {
+                      orderSummary = '${order.items[0].qty}x ${order.items[0].menuName}';
+                    } else {
+                      final otherCount = order.items.length - 1;
+                      orderSummary = '${order.items[0].qty}x ${order.items[0].menuName} +$otherCount menu lainnya';
+                    }
+
+                    final itemQtyTotal = order.items.fold<int>(0, (sum, i) => sum + i.qty);
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.darkGrey,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            JkPageRoute(page: OrderTrackingScreen(orderId: order.id)),
+                          );
+                          _fetchHistory();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Top Row: Date/Time & Status Badge
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    dateStr,
+                                    style: const TextStyle(color: Colors.white38, fontSize: 12),
                                   ),
-                                  child: Text(
-                                    order.status.toUpperCase(),
-                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor),
+                                  Text(
+                                    statusLabel,
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: badgeColor),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text('Total: Rp ${order.totalAmount.toInt()}', style: const TextStyle(color: AppColors.caramelGold)),
-                            const SizedBox(height: 16),
-                            JkPrimaryButton(
-                              label: 'LIHAT STATUS / STRUK',
-                              onPressed: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderId: order.id)),
-                                );
-                                _fetchHistory();
-                              },
-                            ),
-                          ],
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              const Divider(color: Colors.white10, height: 1),
+                              const SizedBox(height: 12),
+                              // Content Row
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          orderSummary,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Order #${order.id} • $itemQtyTotal Item',
+                                          style: const TextStyle(color: Colors.white54, fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Text(
+                                    'Rp ${NumberFormat('#,###').format(order.totalAmount)}',
+                                    style: const TextStyle(color: AppColors.caramelGold, fontWeight: FontWeight.bold, fontSize: 15),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: Colors.white24,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -307,7 +693,7 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('TIDAK', style: TextStyle(color: Colors.white54)),
+            child: const Text('KEMBALI', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.normal)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -334,6 +720,16 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
     }
   }
 
+  Widget _buildSkeletonList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return const JkSkeleton(height: 180, margin: EdgeInsets.only(bottom: 16));
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -342,18 +738,21 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
         actions: [_buildCartAction(context)],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.caramelGold))
+          ? _buildSkeletonList()
           : _reservations.isEmpty
-              ? const Center(child: Text('Belum ada reservasi', style: TextStyle(color: AppColors.softCream)))
+              ? _buildEmptyState(
+                  icon: Icons.event_seat_outlined,
+                  title: 'Belum Ada Reservasi',
+                  description: 'Meja favoritmu menanti. Buat reservasi meja sekarang juga!',
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _reservations.length,
                   itemBuilder: (context, index) {
                     final res = _reservations[index];
-                    final bookingId = res['booking_id'] ?? 'N/A';
+                    final bookingId = 'JK-RES-${res['id']}';
                     final tableId = res['table_id'] ?? 0;
                     final pax = res['pax'] ?? 0;
-                    final timeStr = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.parse(res['reservation_date']));
                     final status = res['status']?.toString() ?? 'pending';
 
                     Color statusColor;
@@ -367,23 +766,39 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
 
                     String statusLabel;
                     switch (status) {
-                      case 'booked': statusLabel = 'BOOKING'; break;
-                      case 'checked_in': statusLabel = 'TELAH TIBA'; break;
-                      case 'completed': statusLabel = 'SELESAI'; break;
-                      case 'cancelled': statusLabel = 'DIBATALKAN'; break;
-                      default: statusLabel = status.toUpperCase();
+                      case 'booked': statusLabel = 'Terkonfirmasi'; break;
+                      case 'checked_in': statusLabel = 'Sudah Hadir'; break;
+                      case 'completed': statusLabel = 'Selesai'; break;
+                      case 'cancelled': statusLabel = 'Dibatalkan'; break;
+                      default: statusLabel = status;
                     }
+
+                    String friendlyDate = '';
+                    try {
+                      final parsedDate = DateTime.parse(res['reservation_date']).toLocal();
+                      friendlyDate = DateFormat('EEEE, d MMM yyyy • HH:mm', 'id_ID').format(parsedDate);
+                    } catch (e) {
+                      friendlyDate = res['reservation_date'];
+                    }
+
+                    final cardTitle = tableId > 0 ? 'Reservasi Meja $tableId' : 'Menunggu Pilihan Meja';
 
                     final canCancel = status == 'booked';
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: GestureDetector(
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.darkGrey,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.03)),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => ReservationSummaryScreen(
+                            JkPageRoute(
+                              page: ReservationSummaryScreen(
                                 date: DateTime.parse(res['reservation_date']),
                                 time: DateFormat('HH:mm').format(DateTime.parse(res['reservation_date'])),
                                 guests: pax,
@@ -394,78 +809,65 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                             ),
                           );
                         },
-                        child: JkGlassCard(
-                          padding: const EdgeInsets.all(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Top Row: Date/Time & Status Badge
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(bookingId, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.caramelGold)),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: statusColor.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: statusColor.withValues(alpha: 0.6)),
-                                    ),
-                                    child: Text(
-                                      statusLabel,
-                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
-                                    ),
+                                  Text(
+                                    friendlyDate,
+                                    style: const TextStyle(color: Colors.white38, fontSize: 12),
+                                  ),
+                                  Text(
+                                    statusLabel,
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: statusColor),
                                   ),
                                 ],
                               ),
-                              const Divider(color: AppColors.glassBorder, height: 20),
+                              const SizedBox(height: 12),
+                              const Divider(color: Colors.white10, height: 1),
+                              const SizedBox(height: 12),
+                              // Content Row
                               Row(
                                 children: [
-                                  const Icon(Icons.table_restaurant, color: Colors.white54, size: 16),
-                                  const SizedBox(width: 8),
-                                  Text('Meja $tableId', style: const TextStyle(color: Colors.white54)),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          cardTitle,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Kode: $bookingId • $pax Orang',
+                                          style: const TextStyle(color: Colors.white54, fontSize: 13),
+                                        ),
+                                        if (canCancel) ...[
+                                          const SizedBox(height: 12),
+                                          GestureDetector(
+                                            onTap: () => _cancelReservation(res['id'] as int),
+                                            child: const Text(
+                                              'Batalkan Reservasi',
+                                              style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
                                   const SizedBox(width: 16),
-                                  const Icon(Icons.people, color: Colors.white54, size: 16),
-                                  const SizedBox(width: 8),
-                                  Text('$pax Orang', style: const TextStyle(color: Colors.white54)),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.calendar_today, color: Colors.white54, size: 16),
-                                      const SizedBox(width: 8),
-                                      Text(timeStr, style: const TextStyle(color: Colors.white54)),
-                                    ],
-                                  ),
-                                  const Row(
-                                    children: [
-                                      Icon(Icons.local_activity, color: AppColors.caramelGold, size: 16),
-                                      SizedBox(width: 4),
-                                      Text('TIKET CHECK-IN', style: TextStyle(color: AppColors.caramelGold, fontSize: 11, fontWeight: FontWeight.bold)),
-                                    ],
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: Colors.white24,
+                                    size: 20,
                                   ),
                                 ],
                               ),
-                              if (canCancel) ...[
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(vertical: 10),
-                                      foregroundColor: Colors.redAccent,
-                                      side: const BorderSide(color: Colors.redAccent),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                    onPressed: () => _cancelReservation(res['id'] as int),
-                                    icon: const Icon(Icons.cancel_outlined, size: 16),
-                                    label: const Text('BATALKAN RESERVASI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -515,17 +917,38 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
     }
   }
 
+  Widget _buildProfileSkeleton() {
+    return const SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      child: Column(
+        children: [
+          JkSkeleton(height: 120),
+          SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(child: JkSkeleton(height: 100)),
+              SizedBox(width: 16),
+              Expanded(child: JkSkeleton(height: 100)),
+            ],
+          ),
+          SizedBox(height: 24),
+          JkSkeleton(height: 250),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PROFILE'),
+        title: const Text('Profile'),
         centerTitle: true,
         actions: [_buildCartAction(context)],
       ),
       backgroundColor: Colors.transparent,
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: AppColors.caramelGold))
+        ? _buildProfileSkeleton()
         : Consumer<AuthProvider>(
         builder: (context, auth, _) {
           final username = _profileData?['username'] ?? auth.username;
@@ -535,75 +958,83 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
             child: Column(
               children: [
-                // Header Profile - Clickable to Edit
-                GestureDetector(
-                  onTap: () async {
-                    final updated = await Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
-                    if (updated == true) _fetchProfile();
-                  },
-                  child: JkGlassCard(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        Stack(
-                          alignment: Alignment.bottomRight,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.caramelGold, width: 2),
-                              ),
-                              child: CircleAvatar(
-                                radius: 45,
-                                backgroundColor: AppColors.darkGrey,
-                                backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+                // Header Profile Flat Card
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.caramelGold, width: 1.5),
+                        ),
+                        child: CircleAvatar(
+                          radius: 32,
+                          backgroundColor: AppColors.darkGrey,
+                          backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
                               ? (imageUrl.startsWith('data:image')
                                   ? MemoryImage(base64Decode(imageUrl.split(',').last))
                                   : NetworkImage(imageUrl)) as ImageProvider
                               : null,
-                                child: (imageUrl == null || imageUrl.isEmpty)
-                                  ? const Icon(Icons.person, size: 50, color: AppColors.caramelGold)
-                                  : null,
-                              ),
+                          child: (imageUrl == null || imageUrl.isEmpty)
+                              ? const Icon(Icons.person, size: 36, color: AppColors.caramelGold)
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              username?.toUpperCase() ?? 'CUSTOMER',
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Member Jabat Kopi',
+                              style: TextStyle(color: Colors.white38, fontSize: 13),
+                            ),
+                            const SizedBox(height: 8),
+                            // Compact inline stats row
+                            Row(
+                              children: [
+                                const Icon(Icons.receipt_long_outlined, color: AppColors.caramelGold, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$_orderCount Orders',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text('•', style: TextStyle(color: Colors.white24)),
+                                const SizedBox(width: 12),
+                                const Icon(Icons.event_seat_outlined, color: AppColors.caramelGold, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$_bookingCount Bookings',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          username?.toUpperCase() ?? 'CUSTOMER',
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.caramelGold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Member Jabat Kopi',
-                          style: TextStyle(color: AppColors.softCream.withValues(alpha: 0.6), fontSize: 13),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Stats Section
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard('Orders', _orderCount.toString(), Icons.receipt_long),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildStatCard('Booking', _bookingCount.toString(), Icons.event_seat),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
                 // Account Actions
-                JkGlassCard(
-                  padding: EdgeInsets.zero,
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.darkGrey,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  ),
                   child: Column(
                     children: [
                       _buildProfileItem(
@@ -613,7 +1044,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                         'Update your personal info',
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
                       ),
-                      const Divider(color: AppColors.glassBorder, height: 1),
+                      const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
                       _buildProfileItem(
                         context, 
                         Icons.notifications_none, 
@@ -621,7 +1052,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                         'Manage alerts & updates',
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen())),
                       ),
-                      const Divider(color: AppColors.glassBorder, height: 1),
+                      const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
                       _buildProfileItem(
                         context, 
                         Icons.security, 
@@ -629,7 +1060,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                         'Password & biometrics',
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SecurityScreen())),
                       ),
-                      const Divider(color: AppColors.glassBorder, height: 1),
+                      const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
                       _buildProfileItem(
                         context, 
                         Icons.help_outline, 
@@ -643,25 +1074,26 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
 
                 const SizedBox(height: 32),
 
-                // Logout Button
-                SizedBox(
+                Container(
                   width: double.infinity,
-                  child: TextButton.icon(
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: TextButton(
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.red.withValues(alpha: 0.1),
-                      foregroundColor: Colors.redAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.3)),
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    icon: const Icon(Icons.logout),
-                    label: const Text('LOGOUT ACCOUNT', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     onPressed: () {
                       auth.logout();
                       Navigator.of(context).popUntil((route) => route.isFirst);
                     },
+                    child: const Text(
+                      'Keluar dari Akun',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -678,21 +1110,19 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
   }
 
   Widget _buildStatCard(String label, String value, IconData icon) {
-    return JkGlassCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Icon(icon, color: AppColors.caramelGold.withValues(alpha: 0.7), size: 20),
-          const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-          Text(label, style: const TextStyle(fontSize: 11, color: Colors.white54)),
-        ],
-      ),
+    return Column(
+      children: [
+        Icon(icon, color: AppColors.caramelGold.withValues(alpha: 0.7), size: 20),
+        const SizedBox(height: 8),
+        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.white54)),
+      ],
     );
   }
 
   Widget _buildProfileItem(BuildContext context, IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
     return ListTile(
+      tileColor: Colors.transparent,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -724,36 +1154,42 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
 }
 
 Widget _buildCartAction(BuildContext context) {
-  final cartCount = context.watch<CartProvider>().items.length;
-  
-  return Stack(
-    alignment: Alignment.center,
-    children: [
-      IconButton(
-        icon: const Icon(Icons.shopping_cart_outlined),
-        onPressed: () => Navigator.push(
-          context, 
-          MaterialPageRoute(builder: (_) => const CustomerCartScreen())
-        ),
-      ),
-      if (cartCount > 0)
-        Positioned(
-          right: 8,
-          top: 8,
-          child: Container(
-            padding: const EdgeInsets.all(4),
+  return const SizedBox.shrink();
+}
+
+Widget _buildEmptyState({
+  required IconData icon,
+  required String title,
+  required String description,
+}) {
+  return Center(
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
-              color: AppColors.caramelGold,
+              color: AppColors.darkGrey,
               shape: BoxShape.circle,
             ),
-            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-            child: Text(
-              '$cartCount',
-              style: const TextStyle(color: AppColors.charcoal, fontSize: 10, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
+            child: Icon(icon, size: 48, color: AppColors.caramelGold.withValues(alpha: 0.8)),
           ),
-        ),
-    ],
+          const SizedBox(height: 24),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: const TextStyle(color: Colors.white54, fontSize: 14, height: 1.4),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ),
   );
 }

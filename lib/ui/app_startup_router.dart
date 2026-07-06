@@ -105,22 +105,27 @@ class _AppStartupRouterState extends State<AppStartupRouter>
                 height: 110,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  color: AppColors.darkGrey,
+                  border: Border.all(color: AppColors.caramelGold, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.caramelGold.withValues(alpha: 0.15),
-                      blurRadius: 60,
-                      spreadRadius: 10,
+                      color: AppColors.caramelGold.withValues(alpha: 0.3),
+                      blurRadius: 40,
+                      spreadRadius: 2,
                     ),
                   ],
                 ),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/logojabatkopi.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(
-                      Icons.coffee,
-                      size: 60,
-                      color: AppColors.caramelGold,
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/logojabatkopi.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.coffee,
+                        size: 48,
+                        color: AppColors.caramelGold,
+                      ),
                     ),
                   ),
                 ),

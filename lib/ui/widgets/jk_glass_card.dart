@@ -20,36 +20,14 @@ class JkGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The simulated glass container
-    Widget glassContainer = Container(
+    return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: withBlur ? AppColors.glassBackground : AppColors.glassBackground.withValues(alpha: 0.2),
-        gradient: withBlur ? null : LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.08),
-            Colors.white.withValues(alpha: 0.02),
-          ],
-        ),
+        color: AppColors.darkGrey,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: AppColors.borderGrey, width: 1.5),
       ),
       child: child,
     );
-
-    if (withBlur) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: glassContainer,
-        ),
-      );
-    }
-
-    // High performance fallback
-    return glassContainer;
   }
 }

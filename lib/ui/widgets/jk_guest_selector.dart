@@ -31,7 +31,7 @@ class JkGuestSelector extends StatelessWidget {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: AppColors.caramelGold,
-            inactiveTrackColor: AppColors.glassBorder,
+            inactiveTrackColor: AppColors.borderGrey,
             thumbColor: AppColors.caramelGold,
             overlayColor: AppColors.caramelGold.withValues(alpha: 0.2),
             valueIndicatorColor: AppColors.caramelGold,

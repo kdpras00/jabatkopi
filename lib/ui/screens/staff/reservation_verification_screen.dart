@@ -106,7 +106,7 @@ class _ReservationVerificationScreenState extends State<ReservationVerificationS
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('VERIFIKASI RESERVASI'),
+        title: const Text('Verifikasi Reservasi'),
         centerTitle: true,
       ),
       body: Column(
@@ -238,7 +238,7 @@ class _ReservationVerificationScreenState extends State<ReservationVerificationS
                                     ],
                                   ),
                                   const SizedBox(height: 20),
-                                  const Divider(color: AppColors.glassBorder, height: 1),
+                                  const Divider(color: AppColors.borderGrey, height: 1),
                                   const SizedBox(height: 20),
                                   
                                   // Customer Name
@@ -270,7 +270,7 @@ class _ReservationVerificationScreenState extends State<ReservationVerificationS
                                   if (!isCheckedIn && !isCompleted && !isCancelled && !isExpired) ...[
                                     const SizedBox(height: 24),
                                     JkPrimaryButton(
-                                      label: 'KONFIRMASI KEHADIRAN',
+                                      label: 'Konfirmasi Kehadiran',
                                       isLoading: _isActionLoading,
                                       onPressed: () => _confirmArrival(id),
                                     ),
@@ -278,7 +278,7 @@ class _ReservationVerificationScreenState extends State<ReservationVerificationS
                                   if (isCheckedIn) ...[
                                     const SizedBox(height: 24),
                                     JkPrimaryButton(
-                                      label: 'SELESAI — BEBASKAN MEJA',
+                                      label: 'Selesai & Bebaskan Meja',
                                       isLoading: _isActionLoading,
                                       onPressed: () => _completeReservation(id),
                                     ),

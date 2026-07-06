@@ -20,8 +20,8 @@ class OrderItemModel {
     return OrderItemModel(
       id: json['id'] ?? 0,
       menuId: json['menu_id'] ?? 0,
-      menuName: menu['name'] ?? 'Item',
-      price: (menu['price'] ?? 0).toDouble(),
+      menuName: json['menu_name'] ?? menu['name'] ?? 'Item',
+      price: (json['price'] ?? menu['price'] ?? 0).toDouble(),
       qty: json['qty'] ?? 0,
       subtotal: (json['subtotal'] ?? 0).toDouble(),
     );
@@ -60,8 +60,8 @@ class OrderModel {
       totalAmount: (json['total_amount'] ?? 0).toDouble(),
       status: json['status'] ?? 'pending',
       paymentMethod: json['payment_method'] ?? '',
-      staffName: json['staff_name'] ?? 'SISTEM',
-      customerName: customer['name'] ?? 'CUSTOMER TERHORMAT',
+      staffName: (json['staff_name'] == 'SISTEM' || json['staff_name'] == null) ? 'Jabat Kopi App' : json['staff_name'] as String,
+      customerName: customer['name'] ?? json['customer_name'] ?? 'CUSTOMER TERHORMAT',
       createdAt: json['created_at'] ?? '',
       items: rawItems.map((item) => OrderItemModel.fromJson(item as Map)).toList(),
     );

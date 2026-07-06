@@ -79,7 +79,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
           decoration: const BoxDecoration(
             color: AppColors.charcoal,
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-            border: Border(top: BorderSide(color: AppColors.glassBorder)),
+            border: Border(top: BorderSide(color: AppColors.borderGrey)),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -146,7 +146,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
                 const SizedBox(height: 32),
 
                 JkPrimaryButton(
-                  label: 'TAMBAH MEJA',
+                  label: 'Tambah Meja',
                   isLoading: isSubmitting,
                   onPressed: () async {
                     if (qrController.text.trim().isEmpty) {
@@ -216,7 +216,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MANAGE TABLES'),
+        title: const Text('Manage Tables'),
         actions: const [
           JkLogoutButton(),
         ],
@@ -332,16 +332,16 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
                                       onPressed: () => _updateTableStatus(tableId, isAvailable ? 'occupied' : 'available'),
                                       style: TextButton.styleFrom(
                                         backgroundColor: isAvailable
-                                            ? Colors.redAccent.withValues(alpha: 0.15)
-                                            : Colors.greenAccent.withValues(alpha: 0.15),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                        padding: const EdgeInsets.symmetric(vertical: 4),
+                                            ? Colors.redAccent
+                                            : Colors.green,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
                                       ),
                                       child: Text(
                                         isAvailable ? 'Set Terisi' : 'Set Tersedia',
-                                        style: TextStyle(
-                                          color: isAvailable ? Colors.redAccent : Colors.greenAccent,
-                                          fontSize: 11,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),

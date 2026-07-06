@@ -18,15 +18,13 @@ class ReservationRepository {
   Future<Map<String, dynamic>> createReservation(String date, String time, int guests, int customerId, int tableId) async {
     try {
       final response = await apiClient.post('/reservations', {
-        'date': date,
-        'time': time,
-        'guests': guests,
-        'customer_id': customerId,
         'table_id': tableId,
+        'reservation_date': '$date $time',
+        'guest_count': guests,
       });
       return response['data'];
     } catch (e) {
-      throw Exception('Failed to create reservation: $e');
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
     }
   }
 

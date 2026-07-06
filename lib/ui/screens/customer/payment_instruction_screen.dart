@@ -13,6 +13,7 @@ class PaymentInstructionScreen extends StatefulWidget {
   final String paymentMethod;
   final Map<String, dynamic> paymentDetails;
   final double totalAmount;
+  final String? snapUrl;
 
   const PaymentInstructionScreen({
     super.key,
@@ -20,6 +21,7 @@ class PaymentInstructionScreen extends StatefulWidget {
     required this.paymentMethod,
     required this.paymentDetails,
     required this.totalAmount,
+    this.snapUrl,
   });
 
   @override
@@ -317,7 +319,7 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
                         ),
                       ],
                     ),
-                    const Divider(height: 20, color: AppColors.glassBorder),
+                    const Divider(height: 20, color: AppColors.borderGrey),
                     const Text(
                       'BILL KEY / NOMOR VA',
                       style: TextStyle(color: Colors.white54, fontSize: 12),
@@ -446,8 +448,35 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
                     ),
                   ],
 
-                  // Loading placeholder if credentials not yet retrieved
-                  if (vaNumber == null && billKey == null && paymentCode == null && qrUrl == null && deeplinkUrl == null) ...[
+                  // 6. Midtrans Snap URL Fallback
+                  if (widget.snapUrl != null && widget.snapUrl!.isNotEmpty) ...[
+                    const Text(
+                      'LINK PEMBAYARAN MIDTRANS',
+                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.caramelGold,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      icon: const Icon(Icons.payment),
+                      label: const Text('BUKA HALAMAN PEMBAYARAN', style: TextStyle(fontWeight: FontWeight.bold)),
+                      onPressed: () async {
+                        try {
+                          final uri = Uri.parse(widget.snapUrl!);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        } catch (e) {
+                          // Ignore
+                        }
+                      },
+                    ),
+                  ]
+                  // Loading placeholder if credentials not yet retrieved and no snap url
+                  else if (vaNumber == null && billKey == null && paymentCode == null && qrUrl == null && deeplinkUrl == null) ...[
                     const CircularProgressIndicator(color: AppColors.caramelGold),
                     const SizedBox(height: 12),
                     const Text(

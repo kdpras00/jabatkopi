@@ -146,6 +146,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
               paymentMethod: _selectedMethod!,
               paymentDetails: paymentDetails,
               totalAmount: widget.totalAmount,
+              snapUrl: orderData['snap_redirect_url'] as String?,
             ),
           ),
         );
@@ -244,7 +245,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                         itemCount: methods.length,
                         separatorBuilder: (context, index) => const Divider(
                           height: 1,
-                          color: AppColors.glassBorder,
+                          color: AppColors.borderGrey,
                         ),
                         itemBuilder: (context, methodIndex) {
                           final method = methods[methodIndex];
@@ -271,6 +272,10 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: isSelected ? AppColors.caramelGold : Colors.transparent,
+                                        width: 2,
+                                      ),
                                     ),
                                     child: Image.asset(
                                       logoUrl,

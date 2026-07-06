@@ -39,15 +39,15 @@ class CustomerCartScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.white24),
+                  Icon(Icons.local_cafe_outlined, size: 64, color: Colors.white24),
                   SizedBox(height: 16),
                   Text(
-                    'Keranjang Anda kosong',
+                    'Gelasmu masih kosong',
                     style: TextStyle(fontSize: 18, color: AppColors.softCream),
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Tambahkan menu favorit Anda',
+                    'Yuk, seduh kopi pertamamu hari ini!',
                     style: TextStyle(fontSize: 13, color: Colors.white38),
                   ),
                 ],
@@ -74,13 +74,17 @@ class CustomerCartScreen extends StatelessWidget {
                               height: 80,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                image: DecorationImage(
-                                  image: NetworkImage(item.menu.imageUrl.isNotEmpty
-                                      ? item.menu.imageUrl
-                                      : 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=400'),
-                                  fit: BoxFit.cover,
-                                ),
+                                color: AppColors.charcoal,
+                                image: item.menu.imageUrl.isNotEmpty
+                                    ? DecorationImage(
+                                        image: NetworkImage(item.menu.imageUrl),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
                               ),
+                              child: item.menu.imageUrl.isEmpty
+                                  ? const Icon(Icons.coffee, color: Colors.white24, size: 32)
+                                  : null,
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -154,7 +158,7 @@ class CustomerCartScreen extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                       ],
                     ),
-                    const Divider(height: 32, color: AppColors.glassBorder),
+                    const Divider(height: 32, color: AppColors.borderGrey),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -248,7 +252,7 @@ class _QtyBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.glassBorder),
+          border: Border.all(color: AppColors.borderGrey),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, size: 16, color: AppColors.caramelGold),

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTheme {
   static ThemeData get darkTheme {
-    // Outfit font sudah di-bundle sebagai local assets di pubspec.yaml.
-    // Tidak menggunakan GoogleFonts package untuk menghindari async font swap glitch.
-    const String fontFamily = 'Outfit';
-
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.charcoal,
@@ -16,50 +13,29 @@ class AppTheme {
         secondary: AppColors.caramelGold,
         surface: AppColors.darkGrey,
       ),
-      fontFamily: fontFamily,
-      appBarTheme: const AppBarTheme(
+      textTheme: GoogleFonts.interTextTheme(
+        ThemeData.dark().textTheme.copyWith(
+          displayLarge: const TextStyle(color: AppColors.softCream, fontWeight: FontWeight.bold, fontSize: 32),
+          titleLarge: const TextStyle(color: AppColors.softCream, fontWeight: FontWeight.w600, fontSize: 20),
+          bodyLarge: const TextStyle(color: AppColors.softCream, fontSize: 16, height: 1.5),
+          bodyMedium: const TextStyle(color: AppColors.softCream, fontSize: 14, height: 1.5),
+        ),
+      ),
+      appBarTheme: AppBarTheme(
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        titleTextStyle: TextStyle(
-          fontFamily: fontFamily,
+        titleTextStyle: GoogleFonts.inter(
           color: AppColors.softCream,
           fontWeight: FontWeight.w600,
           fontSize: 20,
-        ),
-      ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
-          fontFamily: fontFamily,
-          color: AppColors.softCream,
-          fontWeight: FontWeight.bold,
-          fontSize: 32,
-        ),
-        titleLarge: TextStyle(
-          fontFamily: fontFamily,
-          color: AppColors.softCream,
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-        ),
-        bodyLarge: TextStyle(
-          fontFamily: fontFamily,
-          color: AppColors.softCream,
-          fontSize: 16,
-          height: 1.5,
-        ),
-        bodyMedium: TextStyle(
-          fontFamily: fontFamily,
-          color: AppColors.softCream,
-          fontSize: 14,
-          height: 1.5,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.caramelGold,
           foregroundColor: AppColors.charcoal,
-          textStyle: const TextStyle(
-            fontFamily: fontFamily,
+          textStyle: GoogleFonts.inter(
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),

@@ -29,7 +29,7 @@ class _JkPrimaryButtonState extends State<JkPrimaryButton> with SingleTickerProv
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -59,17 +59,10 @@ class _JkPrimaryButtonState extends State<JkPrimaryButton> with SingleTickerProv
         scale: _scaleAnimation,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 18),
           decoration: BoxDecoration(
-            color: isEnabled ? AppColors.caramelGold : AppColors.caramelGold.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: isEnabled ? [
-              BoxShadow(
-                color: AppColors.caramelGold.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ] : [],
+            color: isEnabled ? AppColors.caramelGold : AppColors.caramelGold.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Center(
             child: widget.isLoading
@@ -78,14 +71,16 @@ class _JkPrimaryButtonState extends State<JkPrimaryButton> with SingleTickerProv
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppColors.charcoal,
+                      color: Colors.white,
                     ),
                   )
                 : Text(
                     widget.label,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: isEnabled ? AppColors.charcoal : AppColors.charcoal.withValues(alpha: 0.5),
+                          color: isEnabled ? Colors.white : Colors.white30,
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          letterSpacing: 0.5,
                         ),
                   ),
           ),

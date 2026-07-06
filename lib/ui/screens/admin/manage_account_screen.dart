@@ -82,7 +82,7 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
           decoration: const BoxDecoration(
             color: AppColors.charcoal,
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-            border: Border(top: BorderSide(color: AppColors.glassBorder)),
+            border: Border(top: BorderSide(color: AppColors.borderGrey)),
           ),
           child: SingleChildScrollView(
             child: Column(

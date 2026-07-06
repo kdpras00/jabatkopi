@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/network/api_client.dart';
 import '../../../data/models/menu_model.dart';
@@ -87,7 +87,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
           decoration: const BoxDecoration(
             color: AppColors.charcoal,
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-            border: Border(top: BorderSide(color: AppColors.glassBorder)),
+            border: Border(top: BorderSide(color: AppColors.borderGrey)),
           ),
           child: SingleChildScrollView(
             child: Column(
@@ -195,16 +195,10 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                   onPressed: () async {
                     setModalState(() => isUploading = true);
                     try {
-                      String finalImageUrl = menu?.imageUrl ?? '';
+                      String? base64Image;
                       if (pickedImage != null) {
-                        final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
                         final bytes = await pickedImage!.readAsBytes();
-                        await Supabase.instance.client.storage
-                            .from('menu-images')
-                            .uploadBinary(fileName, bytes);
-                        finalImageUrl = Supabase.instance.client.storage
-                            .from('menu-images')
-                            .getPublicUrl(fileName);
+                        base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
                       }
 
                       final data = {
@@ -212,9 +206,14 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                         'category': selectedCategory,
                         'price': double.tryParse(priceController.text) ?? 0,
                         'stock': int.tryParse(stockController.text) ?? 0,
-                        'image_url': finalImageUrl,
                         'description': '-',
                       };
+                      
+                      if (base64Image != null) {
+                        data['image_base64'] = base64Image;
+                      } else if (menu != null) {
+                        data['image_url'] = menu.imageUrl;
+                      }
 
                       if (menu == null) {
                         await ApiClient().post('/admin/menus', data);

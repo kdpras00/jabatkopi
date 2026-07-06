@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/theme/app_colors.dart';
 import '../core/providers/auth_provider.dart';
 import 'widgets/jk_glass_card.dart';
@@ -18,22 +17,11 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
-    _checkSupabaseConnection();
-  }
-
-  Future<void> _checkSupabaseConnection() async {
-    try {
-      final supabase = Supabase.instance.client;
-      // Do a simple query to verify connection in the background
-      await supabase.from('users').select('id').limit(1);
-      debugPrint('Supabase connection verified successfully.');
-    } catch (e) {
-      debugPrint('Supabase connection error: $e');
-    }
   }
 
   void _handleLogin() async {
@@ -64,6 +52,13 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -103,18 +98,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Email',
-                        prefixIcon: Icon(Icons.email, color: AppColors.caramelGold),
+                        prefixIcon: const Icon(Icons.email, color: AppColors.caramelGold),
+                        filled: true,
+                        fillColor: AppColors.charcoal,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
                         labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock, color: AppColors.caramelGold),
+                        prefixIcon: const Icon(Icons.lock, color: AppColors.caramelGold),
+                        filled: true,
+                        fillColor: AppColors.charcoal,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            color: AppColors.caramelGold,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),

@@ -22,6 +22,29 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen> {
   OrderModel? _order;
   bool _isLoading = true;
 
+  String _getFriendlyPaymentMethod(String method) {
+    final lower = method.toLowerCase();
+    if (lower.contains('bca')) return 'BCA Virtual Account';
+    if (lower.contains('bni')) return 'BNI Virtual Account';
+    if (lower.contains('bri')) return 'BRI Virtual Account';
+    if (lower.contains('mandiri')) return 'Mandiri Bill Payment';
+    if (lower.contains('permata')) return 'Permata Virtual Account';
+    if (lower.contains('gopay')) return 'GoPay';
+    if (lower.contains('shopeepay')) return 'ShopeePay';
+    if (lower.contains('qris')) return 'QRIS';
+    if (lower.contains('alfamart')) return 'Alfamart';
+    if (lower.contains('indomaret')) return 'Indomaret';
+    if (lower.contains('bank_transfer') || lower.contains('bank transfer')) return 'Transfer Bank';
+    return method.toUpperCase().replaceAll('_', ' ');
+  }
+
+  String _getTableDisplay() {
+    if (_order!.tableId == null || _order!.tableId == 0) {
+      return 'Belum Ditentukan';
+    }
+    return 'Meja: ${_order!.tableId}';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -48,10 +71,19 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen> {
     return Scaffold(
       backgroundColor: AppColors.charcoal,
       appBar: AppBar(
-        title: const Text('STRUK PEMBAYARAN'),
+        title: const Text('Struk Pembayaran'),
         centerTitle: true,
         backgroundColor: AppColors.darkGrey,
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const CustomerHomeScreen()),
+              (route) => false,
+            );
+          },
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.caramelGold))
@@ -117,7 +149,7 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text('Bon JK-ORDER-${_order!.id}'),
-                                  Text('Meja: ${_order!.tableId}'),
+                                  Text(_getTableDisplay()),
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -127,7 +159,7 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen> {
                                 children: [
                                   Flexible(
                                     child: Text(
-                                      'Metode: ${_order!.paymentMethod.toUpperCase()}',
+                                      'Metode: ${_getFriendlyPaymentMethod(_order!.paymentMethod)}',
                                       overflow: TextOverflow.visible,
                                     ),
                                   ),
@@ -167,6 +199,7 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen> {
                                   );
                                 }),
 
+                              const SizedBox(height: 8),
                               const SizedBox(height: 8),
                               const _DashedDivider(),
                               const SizedBox(height: 12),
@@ -208,6 +241,7 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen> {
                               // Tanggal & Footer Member
                               Text('Tgl. ${DateFormat('dd-MM-yyyy HH:mm:ss').format(DateTime.now())} V.2026.3.0', style: const TextStyle(fontSize: 11)),
                               const SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Text('MEMBER : ${_order!.customerName.toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 8),
                               const _DashedDivider(),
@@ -227,24 +261,13 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen> {
 
                       // Tombol Aksi
                       JkPrimaryButton(
-                        label: 'LIHAT STATUS PESANAN',
+                        label: 'Lihat Status Pesanan',
                         onPressed: () {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderId: _order!.id)),
                           );
                         },
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (_) => const CustomerHomeScreen()),
-                            (route) => false,
-                          );
-                        },
-                        child: const Text('KEMBALI KE BERANDA', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),

@@ -18,6 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
@@ -91,7 +92,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 16),
                       _buildTextField('Email', _emailController, icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
                       const SizedBox(height: 16),
-                      _buildTextField('Password', _passwordController, icon: Icons.lock_outline, obscureText: true),
+                      _buildTextField('Password', _passwordController, icon: Icons.lock_outline, isPassword: true),
                       const SizedBox(height: 32),
                       _isLoading 
                         ? const CircularProgressIndicator(color: AppColors.caramelGold)
@@ -117,7 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {required IconData icon, bool obscureText = false, TextInputType? keyboardType}) {
+  Widget _buildTextField(String label, TextEditingController controller, {required IconData icon, bool isPassword = false, TextInputType? keyboardType}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -125,13 +126,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          obscureText: obscureText,
+          obscureText: isPassword ? _obscurePassword : false,
           keyboardType: keyboardType,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppColors.caramelGold.withValues(alpha: 0.5), size: 20),
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      color: AppColors.caramelGold,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  )
+                : null,
             filled: true,
-            fillColor: Colors.black26,
+            fillColor: AppColors.charcoal,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           ),
           validator: (v) => v == null || v.isEmpty ? 'Required' : null,

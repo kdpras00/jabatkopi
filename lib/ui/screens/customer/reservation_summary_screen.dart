@@ -53,13 +53,11 @@ class ReservationSummaryScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                     decoration: BoxDecoration(
-                      color: tableAssigned
-                          ? AppColors.caramelGold.withValues(alpha: 0.1)
-                          : Colors.orange.withValues(alpha: 0.08),
+                      color: Colors.white.withValues(alpha: 0.02),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: tableAssigned ? AppColors.caramelGold : Colors.orange,
-                        width: 2,
+                        color: Colors.white10,
+                        width: 1,
                       ),
                     ),
                     child: Column(
@@ -68,9 +66,7 @@ class ReservationSummaryScreen extends StatelessWidget {
                           tableAssigned ? 'MEJA' : 'MEJA BELUM DITENTUKAN',
                           style: TextStyle(
                             fontSize: 12,
-                            color: tableAssigned
-                                ? AppColors.softCream.withValues(alpha: 0.7)
-                                : Colors.orange,
+                            color: Colors.white38,
                             letterSpacing: 1.5,
                           ),
                         ),
@@ -81,12 +77,12 @@ class ReservationSummaryScreen extends StatelessWidget {
                             style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.caramelGold),
                           )
                         else ...[
-                          const Icon(Icons.schedule, color: Colors.orange, size: 36),
+                          const Icon(Icons.schedule, color: AppColors.caramelGold, size: 36),
                           const SizedBox(height: 8),
                           const Text(
                             'Staf akan menyiapkan meja\nsaat Anda tiba di cafe',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.orange, fontSize: 13, height: 1.5),
+                            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
                           ),
                         ],
                       ],
@@ -95,9 +91,9 @@ class ReservationSummaryScreen extends StatelessWidget {
                   const SizedBox(height: 32),
 
                   _buildDetailRow('Tanggal', DateFormat('EEEE, dd MMM yyyy', 'id_ID').format(date)),
-                  const Divider(color: AppColors.glassBorder, height: 32),
+                  const Divider(color: AppColors.borderGrey, height: 32),
                   _buildDetailRow('Waktu', time),
-                  const Divider(color: AppColors.glassBorder, height: 32),
+                  const Divider(color: AppColors.borderGrey, height: 32),
                   _buildDetailRow('Jumlah Orang', '$guests Orang'),
                   const SizedBox(height: 32),
 
@@ -107,14 +103,14 @@ class ReservationSummaryScreen extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.07),
+                        color: Colors.white.withValues(alpha: 0.02),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                        border: Border.all(color: Colors.white10),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.sticky_note_2_outlined, color: Colors.amber, size: 18),
+                          const Icon(Icons.sticky_note_2_outlined, color: AppColors.caramelGold, size: 18),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
@@ -122,7 +118,7 @@ class ReservationSummaryScreen extends StatelessWidget {
                               children: [
                                 const Text(
                                   'CATATAN DARI STAF',
-                                  style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: Colors.amber, fontWeight: FontWeight.bold),
+                                  style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: AppColors.caramelGold, fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
@@ -144,7 +140,7 @@ class ReservationSummaryScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.caramelGold.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.glassBorder),
+                      border: Border.all(color: AppColors.borderGrey),
                     ),
                     child: const Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,11 +158,6 @@ class ReservationSummaryScreen extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 40),
-            JkPrimaryButton(
-              label: 'KEMBALI KE BERANDA',
-              onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
             ),
           ],
         ),

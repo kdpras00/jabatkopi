@@ -64,7 +64,7 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
         0, // Pass 0 to auto-allocate
       );
 
-      final bookingId = resData['booking_id'] ?? 'JK-RES-${resData['reservation_id']}';
+      final bookingId = resData['booking_id'] ?? 'JK-RES-${resData['id'] ?? resData['reservation_id']}';
       final qrCode = resData['barcode'] ?? resData['qr_code'] ?? bookingId;
       final assignedTableId = resData['table_id'] as int? ?? 0;
 
@@ -119,78 +119,63 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('SELECT DATE', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.caramelGold)),
-                const SizedBox(height: 16),
-                JkHorizontalCalendar(
-                  selectedDate: _selectedDate,
-                  onDateSelected: (date) {
-                    setState(() => _selectedDate = date);
-                  },
-                ),
-                const SizedBox(height: 32),
-                Text('SELECT TIME', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.caramelGold)),
-                const SizedBox(height: 16),
-                JkTimeGrid(
-                  selectedTime: _selectedTime,
-                  onTimeSelected: (time) {
-                    setState(() => _selectedTime = time);
-                  },
-                ),
-                const SizedBox(height: 32),
-                Text('JUMLAH ORANG', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.caramelGold)),
-                const SizedBox(height: 16),
-                JkGlassCard(
-                  padding: const EdgeInsets.all(24),
-                  child: JkGuestSelector(
-                    guestCount: _guestCount,
-                    onCountChanged: (count) => setState(() => _guestCount = count),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                const Opacity(
-                  opacity: 0.5,
-                  child: Center(
-                    child: Text(
-                      'With booking, you agree to our terms and conditions.',
-                      style: TextStyle(fontSize: 10),
-                    ),
-                  ),
-                ),
-              ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('SELECT DATE', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.caramelGold)),
+            const SizedBox(height: 16),
+            JkHorizontalCalendar(
+              selectedDate: _selectedDate,
+              onDateSelected: (date) {
+                setState(() => _selectedDate = date);
+              },
             ),
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
+            const SizedBox(height: 32),
+            Text('SELECT TIME', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.caramelGold)),
+            const SizedBox(height: 16),
+            JkTimeGrid(
+              selectedTime: _selectedTime,
+              onTimeSelected: (time) {
+                setState(() => _selectedTime = time);
+              },
+            ),
+            const SizedBox(height: 32),
+            Text('JUMLAH ORANG', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppColors.caramelGold)),
+            const SizedBox(height: 4),
+            const Text(
+              'Untuk rombongan lebih dari 6 orang, harap hubungi staf kami.',
+              style: TextStyle(color: Colors.white54, fontSize: 12, fontStyle: FontStyle.italic),
+            ),
+            const SizedBox(height: 16),
+            JkGlassCard(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.charcoal.withValues(alpha: 0),
-                    AppColors.charcoal,
-                  ],
-                ),
-              ),
-              child: JkPrimaryButton(
-                label: 'KONFIRMASI RESERVASI',
-                isLoading: _isChecking,
-                onPressed: _selectedTime == null ? null : _submitReservation,
+              child: JkGuestSelector(
+                guestCount: _guestCount,
+                onCountChanged: (count) => setState(() => _guestCount = count),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+
+            const Opacity(
+              opacity: 0.5,
+              child: Center(
+                child: Text(
+                  'With booking, you agree to our terms and conditions.',
+                  style: TextStyle(fontSize: 10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            JkPrimaryButton(
+              label: 'KONFIRMASI RESERVASI',
+              isLoading: _isChecking,
+              onPressed: _selectedTime == null ? null : _submitReservation,
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

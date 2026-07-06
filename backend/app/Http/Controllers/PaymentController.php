@@ -56,7 +56,7 @@ class PaymentController extends Controller
         if ($newStatus !== $oldStatus) {
             $order->update([
                 'status' => $newStatus,
-                'payment_method' => strtoupper(str_replace('_', ' ', $paymentType ?? $order->payment_method)),
+                'payment_method' => $order->payment_method ?: strtoupper(str_replace('_', ' ', $paymentType)),
             ]);
 
             event(new \App\Events\OrderCreated());
