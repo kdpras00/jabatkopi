@@ -43,6 +43,16 @@ jobs:
           cd backend
           zip -r ../deploy.zip . -x "node_modules/*" "tests/*" "phpunit.xml" ".env" "storage/app/public/*"
 
+      - name: Ensure Target Directory Exists
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY_PRIVATE }}
+          port: 2223
+          script: |
+            mkdir -p ~/public_html/domains/jabatkopi.my.id
+
       - name: Upload Zip via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
