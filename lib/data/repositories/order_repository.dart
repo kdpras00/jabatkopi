@@ -24,7 +24,7 @@ class OrderRepository {
   Future<List<OrderModel>> getOrdersByTable(int tableId) async {
     try {
       final response = await apiClient.get('/orders/table/$tableId');
-      final List<dynamic> data = response['data'] ?? [];
+      final List<dynamic> data = response is List ? response : (response['data'] ?? []);
       return data.map((json) => OrderModel.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Failed to get orders for table: $e');
@@ -34,7 +34,7 @@ class OrderRepository {
   Future<List<OrderModel>> getOrderHistory() async {
     try {
       final response = await apiClient.get('/orders/history');
-      final List<dynamic> data = response['data'] ?? [];
+      final List<dynamic> data = response is List ? response : (response['data'] ?? []);
       return data.map((json) => OrderModel.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Failed to get order history: $e');
@@ -44,7 +44,7 @@ class OrderRepository {
   Future<List<OrderModel>> getActiveOrders() async {
     try {
       final response = await apiClient.get('/orders/active');
-      final List<dynamic> data = response['data'] ?? [];
+      final List<dynamic> data = response is List ? response : (response['data'] ?? []);
       return data.map((json) => OrderModel.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Failed to get active orders: $e');

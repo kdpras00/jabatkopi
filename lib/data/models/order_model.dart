@@ -21,9 +21,9 @@ class OrderItemModel {
       id: json['id'] ?? 0,
       menuId: json['menu_id'] ?? 0,
       menuName: json['menu_name'] ?? menu['name'] ?? 'Item',
-      price: (json['price'] ?? menu['price'] ?? 0).toDouble(),
+      price: double.tryParse((json['price'] ?? menu['price'])?.toString() ?? '0') ?? 0.0,
       qty: json['qty'] ?? 0,
-      subtotal: (json['subtotal'] ?? 0).toDouble(),
+      subtotal: double.tryParse(json['subtotal']?.toString() ?? '0') ?? 0.0,
     );
   }
 }
@@ -57,7 +57,7 @@ class OrderModel {
     return OrderModel(
       id: json['id'] ?? 0,
       tableId: json['table_id'] as int?,
-      totalAmount: (json['total_amount'] ?? 0).toDouble(),
+      totalAmount: double.tryParse(json['total_amount']?.toString() ?? '0') ?? 0.0,
       status: json['status'] ?? 'pending',
       paymentMethod: json['payment_method'] ?? '',
       staffName: (json['staff_name'] == 'SISTEM' || json['staff_name'] == null) ? 'Jabat Kopi App' : json['staff_name'] as String,

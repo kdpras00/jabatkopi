@@ -9,7 +9,7 @@ class MenuRepository {
   Future<List<MenuModel>> getMenus() async {
     try {
       final response = await apiClient.get('/menus');
-      final List<dynamic> data = response['data'] ?? [];
+      final List<dynamic> data = response is List ? response : (response['data'] ?? []);
       return data.map((json) => MenuModel.fromJson(json)).toList();
     } catch (e) {
       throw Exception('Failed to fetch menus: $e');

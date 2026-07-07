@@ -24,7 +24,7 @@ class MenuModel {
       id: json['id'],
       name: json['name'] ?? '',
       category: json['category'] ?? '',
-      price: (json['price'] ?? 0).toDouble(),
+      price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       description: json['description'] ?? '',
       imageUrl: json['image_url'] ?? '',
       isAvailable: json['is_available'] ?? true,

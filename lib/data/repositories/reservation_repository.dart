@@ -8,7 +8,7 @@ class ReservationRepository {
   Future<List<Map<String, dynamic>>> checkAvailability(String date, String time) async {
     try {
       final response = await apiClient.get('/tables/available?date=$date&time=$time');
-      final List<dynamic> data = response['data'] ?? [];
+      final List<dynamic> data = response is List ? response : (response['data'] ?? []);
       return data.cast<Map<String, dynamic>>();
     } catch (e) {
       throw Exception('Failed to check availability: $e');
@@ -31,7 +31,7 @@ class ReservationRepository {
   Future<List<Map<String, dynamic>>> getReservationHistory() async {
     try {
       final response = await apiClient.get('/reservations/history');
-      final List<dynamic> data = response['data'] ?? [];
+      final List<dynamic> data = response is List ? response : (response['data'] ?? []);
       return data.cast<Map<String, dynamic>>();
     } catch (e) {
       throw Exception('Failed to get reservation history: $e');
@@ -41,7 +41,7 @@ class ReservationRepository {
   Future<List<Map<String, dynamic>>> getAdminReservations() async {
     try {
       final response = await apiClient.get('/admin/reservations');
-      final List<dynamic> data = response['data'] ?? [];
+      final List<dynamic> data = response is List ? response : (response['data'] ?? []);
       return data.cast<Map<String, dynamic>>();
     } catch (e) {
       throw Exception('Failed to get admin reservations: $e');
