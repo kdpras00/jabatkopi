@@ -1,0 +1,17 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Pass Authorization header through
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect to public/ if the file exists in public/
+    RewriteCond %{DOCUMENT_ROOT}/domains/jabatkopi.my.id/public%{REQUEST_URI} -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f [OR]
+    RewriteCond public%{REQUEST_URI} -f
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
+
+    # Route all other requests to public/index.php
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/index.php [L,QSA]
+</IfModule>
