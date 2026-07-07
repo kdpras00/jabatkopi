@@ -516,10 +516,12 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(overlayColor: Colors.transparent),
             child: const Text('KEMBALI', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.normal)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(overlayColor: Colors.transparent),
             child: const Text('YA, BATALKAN', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
@@ -900,6 +902,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       foregroundColor: Colors.white,
+                      overlayColor: Colors.transparent,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     onPressed: () {

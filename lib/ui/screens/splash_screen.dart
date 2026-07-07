@@ -187,6 +187,7 @@ class _SplashScreenState extends State<SplashScreen> {
                             curve: Curves.easeInOut,
                           );
                         },
+                        style: TextButton.styleFrom(overlayColor: Colors.transparent),
                         child: const Text('SKIP', style: TextStyle(color: Colors.white24)),
                       ),
                       ElevatedButton(

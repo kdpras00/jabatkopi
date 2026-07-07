@@ -146,6 +146,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
                 },
+                style: TextButton.styleFrom(
+                  overlayColor: Colors.transparent,
+                ),
                 child: const Text(
                   "Don't have an account? Register Now",
                   style: TextStyle(color: AppColors.caramelGold),

@@ -74,10 +74,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(overlayColor: Colors.transparent),
             child: const Text('TIDAK', style: TextStyle(color: Colors.white54)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(overlayColor: Colors.transparent),
             child: const Text('YA, BATALKAN', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
@@ -121,6 +123,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               padding: const EdgeInsets.only(right: 8.0),
               child: TextButton(
                 onPressed: _isCancelling ? null : _cancelOrder,
+                style: TextButton.styleFrom(overlayColor: Colors.transparent),
                 child: _isCancelling
                     ? const SizedBox(
                         width: 16,

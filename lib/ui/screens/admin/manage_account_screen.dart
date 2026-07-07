@@ -302,8 +302,9 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
         title: const Text('Delete Account?'),
         content: Text('Are you sure you want to delete ${user['name']}?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL')),
+          TextButton(onPressed: () => Navigator.pop(ctx), style: TextButton.styleFrom(overlayColor: Colors.transparent), child: const Text('CANCEL')),
           TextButton(
+            style: TextButton.styleFrom(overlayColor: Colors.transparent),
             onPressed: () async {
               await ApiClient().delete('/admin/users/${user['id']}');
               if (!ctx.mounted) return;

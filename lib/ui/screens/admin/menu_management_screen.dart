@@ -461,8 +461,9 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
         title: const Text('Delete Item?'),
         content: Text('Are you sure you want to delete ${menu.name}?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL')),
+          TextButton(onPressed: () => Navigator.pop(ctx), style: TextButton.styleFrom(overlayColor: Colors.transparent), child: const Text('CANCEL')),
           TextButton(
+            style: TextButton.styleFrom(overlayColor: Colors.transparent),
             onPressed: () async {
               await ApiClient().delete('/admin/menus/${menu.id}');
               if (!ctx.mounted) return;

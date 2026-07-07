@@ -56,63 +56,64 @@ class _RegisterScreenState extends State<RegisterScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: NetworkImage('https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=800'),
+            image: NetworkImage('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800'),
             fit: BoxFit.cover,
-            opacity: 0.15,
+            opacity: 0.3,
           ),
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center, // Ubah ke center untuk branding
-            children: [
-              const SizedBox(height: 60),
-              const Text(
-                'JABAT KOPI',
-                style: TextStyle(
-                  color: AppColors.caramelGold,
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 4,
-                ),
-              ),
-              const Text(
-                'PREMIUM COFFEE EXPERIENCE',
-                style: TextStyle(color: Colors.white70, fontSize: 12, letterSpacing: 1),
-              ),
-              const SizedBox(height: 64),
-              Form(
-                key: _formKey,
-                child: JkGlassCard(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      _buildTextField('Full Name', _nameController, icon: Icons.person_outline),
-                      const SizedBox(height: 16),
-                      _buildTextField('Username', _usernameController, icon: Icons.alternate_email),
-                      const SizedBox(height: 16),
-                      _buildTextField('Email', _emailController, icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
-                      const SizedBox(height: 16),
-                      _buildTextField('Password', _passwordController, icon: Icons.lock_outline, isPassword: true),
-                      const SizedBox(height: 32),
-                      _isLoading 
-                        ? const CircularProgressIndicator(color: AppColors.caramelGold)
-                        : JkPrimaryButton(
-                            label: 'CREATE ACCOUNT',
-                            onPressed: _register,
-                          ),
-                    ],
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'JABAT KOPI',
+                  style: TextStyle(
+                    color: AppColors.caramelGold,
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 4,
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Already have an account? Login', style: TextStyle(color: AppColors.caramelGold)),
+                const Text('PREMIUM COFFEE EXPERIENCE'),
+                const SizedBox(height: 64),
+                Form(
+                  key: _formKey,
+                  child: JkGlassCard(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        _buildTextField('Full Name', _nameController, icon: Icons.person),
+                        const SizedBox(height: 16),
+                        _buildTextField('Username', _usernameController, icon: Icons.alternate_email),
+                        const SizedBox(height: 16),
+                        _buildTextField('Email', _emailController, icon: Icons.email, keyboardType: TextInputType.emailAddress),
+                        const SizedBox(height: 16),
+                        _buildTextField('Password', _passwordController, icon: Icons.lock, isPassword: true),
+                        const SizedBox(height: 32),
+                        JkPrimaryButton(
+                          label: 'CREATE ACCOUNT',
+                          isLoading: _isLoading,
+                          onPressed: _register,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    overlayColor: Colors.transparent,
+                  ),
+                  child: const Text(
+                    'Already have an account? Login',
+                    style: TextStyle(color: AppColors.caramelGold),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -120,38 +121,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildTextField(String label, TextEditingController controller, {required IconData icon, bool isPassword = false, TextInputType? keyboardType}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: AppColors.caramelGold, fontSize: 12)),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          obscureText: isPassword ? _obscurePassword : false,
-          keyboardType: keyboardType,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: AppColors.caramelGold.withValues(alpha: 0.5), size: 20),
-            suffixIcon: isPassword
-                ? IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      color: AppColors.caramelGold,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  )
-                : null,
-            filled: true,
-            fillColor: AppColors.charcoal,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-          ),
-          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-        ),
-      ],
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword ? _obscurePassword : false,
+      keyboardType: keyboardType,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: AppColors.caramelGold),
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: AppColors.caramelGold,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              )
+            : null,
+        filled: true,
+        fillColor: AppColors.charcoal,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      ),
+      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
     );
   }
 }
