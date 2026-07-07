@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "895532778428",
+    "project_id": "jabatkopi-173c3",
+    "storage_bucket": "jabatkopi-173c3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:895532778428:android:f0ab679faabf5d330aa1b9",
+        "android_client_info": {
+          "package_name": "com.example.jabatkopi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABmQs-5igZo56rflxiak_cvtIG1wm5h4M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

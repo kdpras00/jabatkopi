@@ -15,6 +15,7 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::get('/profile', [AuthController::class, 'profile']);
 Route::put('/profile', [AuthController::class, 'updateProfile']);
 Route::put('/profile/password', [AuthController::class, 'updatePassword']);
+Route::put('/profile/fcm-token', [AuthController::class, 'updateFcmToken']);
 
 Route::get('/menus', [MenuController::class, 'index']);
 Route::post('/admin/menus', [MenuController::class, 'store']);

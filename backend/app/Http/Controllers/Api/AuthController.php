@@ -106,4 +106,23 @@ class AuthController extends Controller
         ]);
         return response()->json(['status' => 200, 'message' => 'Password berhasil diperbarui!']);
     }
+
+    public function updateFcmToken(Request $request)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string',
+        ]);
+
+        $customerId = $request->header('X-User-Id');
+        if (!$customerId) {
+            return response()->json(['message' => 'User ID is missing'], 401);
+        }
+
+        DB::table('users')->where('id', $customerId)->update([
+            'fcm_token' => $request->fcm_token,
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['status' => 200, 'message' => 'FCM Token updated successfully']);
+    }
 }

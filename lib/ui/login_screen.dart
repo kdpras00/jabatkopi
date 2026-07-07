@@ -7,6 +7,9 @@ import 'widgets/jk_primary_button.dart';
 import 'main_navigator.dart';
 import 'register_screen.dart';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
+import '../core/utils/notification_service.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -32,6 +35,15 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text,
       );
       if (success && mounted) {
+        try {
+          final token = await FirebaseMessaging.instance.getToken();
+          if (token != null) {
+            await NotificationService().syncTokenToBackend(token);
+          }
+        } catch (e) {
+          debugPrint("Failed to sync token on login: $e");
+        }
+        
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => const MainNavigator(),

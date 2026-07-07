@@ -6,6 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/cart_provider.dart';
 import 'ui/app_startup_router.dart';
+import 'core/utils/notification_service.dart';
 
 String? initError;
 
@@ -16,6 +17,13 @@ void main() async {
     await initializeDateFormatting('id_ID', null);
     await initializeDateFormatting('id', null);
     Intl.defaultLocale = 'id_ID';
+
+    // Initialize Notification Service
+    try {
+      await NotificationService().initialize();
+    } catch (e) {
+      debugPrint("FCM Init error: $e");
+    }
   } catch (e) {
     initError = "Init Error: $e";
     debugPrint(initError);

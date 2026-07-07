@@ -308,6 +308,29 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         DB::table('orders')->where('id', $id)->update(['status' => $request->status, 'updated_at' => now()]);
+
+        if ($request->status === 'ready') {
+            try {
+                $order = DB::table('orders')->where('id', $id)->first();
+                if ($order && $order->customer_id) {
+                    $user = DB::table('users')->where('id', $order->customer_id)->first();
+                    if ($user && !empty($user->fcm_token)) {
+                        $messaging = app('firebase.messaging');
+                        $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget('token', $user->fcm_token)
+                            ->withNotification(\Kreait\Firebase\Messaging\Notification::create(
+                                'Pesanan Siap Diambil!',
+                                'Pesanan kopi Anda sudah jadi dan siap dinikmati di meja pengambilan.'
+                            ))
+                            ->withData(['order_id' => $id, 'status' => 'ready']);
+                        
+                        $messaging->send($message);
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('FCM Send Error: ' . $e->getMessage());
+            }
+        }
+
         return response()->json(['status' => 200, 'message' => 'Status updated']);
     }
 
