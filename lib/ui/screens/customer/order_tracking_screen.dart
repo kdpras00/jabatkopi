@@ -44,7 +44,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   void initState() {
     super.initState();
     _orderRepo = OrderRepository(apiClient: ApiClient());
-    _loadPagerPermissionPref();
+    // FIX: await prefs first to eliminate race condition with _fetchOrder()
+    _loadPrefsAndStart();
+  }
+
+  Future<void> _loadPrefsAndStart() async {
+    await _loadPagerPermissionPref();
     _fetchOrder();
     _timer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchOrder());
   }
@@ -60,7 +65,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           _hasSeenPagerPrompt = hasSeenPrompt;
         });
       }
-    } catch (_) {}
+    } catch (_) {} // non-blocking: state already set via setState
   }
 
   @override
@@ -97,6 +102,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Future<void> _checkAndRequestBuzzerPermission() async {
     if (_hasSeenPagerPrompt || _buzzerSilenced) return;
+    
+    // UX: let user see the order status first, then show the prompt
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted || _hasSeenPagerPrompt) return;
     
     final result = await showDialog<bool>(
       context: context,
@@ -148,7 +157,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ),
                       onPressed: () => Navigator.pop(context, false),
                       child: const Text(
-                        'Nanti Saja',
+                        // Explicit: 'Lewati Selamanya' — no false hope of "nanti"
+                        'Lewati',
                         style: TextStyle(color: Colors.white30, fontSize: 14),
                       ),
                     ),
@@ -163,7 +173,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      onPressed: () => Navigator.pop(context, true),
+                      onPressed: () {
+                        // FIX: unlock AudioContext immediately inside user gesture,
+                        // before any await that would expire the activation context
+                        jsh.playWebBeep();
+                        Navigator.pop(context, true);
+                      },
                       child: const Text(
                         'Aktifkan',
                         style: TextStyle(
@@ -188,18 +203,62 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         _buzzerAllowed = granted;
         _hasSeenPagerPrompt = true;
       });
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('pager_permission_granted', granted);
-        await prefs.setBool('has_seen_pager_prompt', true);
-      } catch (_) {}
+      // persist async in background — audio already unlocked above inside onPressed
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setBool('pager_permission_granted', granted);
+        prefs.setBool('has_seen_pager_prompt', true);
+      });
       
-      if (granted) {
-        jsh.playWebBeep();
-        if (_order?.status == 'ready') {
-          _startBuzzerLoop();
-        }
+      if (granted && _order?.status == 'ready') {
+        _startBuzzerLoop();
       }
+    }
+  }
+
+  // Re-enable pager: shows a mini prompt in AppBar when buzzer is not set
+  Future<void> _promptReEnableBuzzer() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.charcoal,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Row(
+          children: [
+            Icon(Icons.notifications_active, color: AppColors.caramelGold, size: 20),
+            SizedBox(width: 8),
+            Text('Aktifkan Pager?', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+        content: const Text(
+          'Aktifkan bunyi dan getaran pager untuk pesanan ini?',
+          style: TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Tidak', style: TextStyle(color: Colors.white30)),
+          ),
+          TextButton(
+            onPressed: () {
+              jsh.playWebBeep(); // unlock audio in gesture context
+              Navigator.pop(context, true);
+            },
+            child: const Text('Aktifkan', style: TextStyle(color: AppColors.caramelGold, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (mounted && result == true) {
+      setState(() {
+        _buzzerAllowed = true;
+        _hasSeenPagerPrompt = true;
+      });
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setBool('pager_permission_granted', true);
+        prefs.setBool('has_seen_pager_prompt', true);
+      });
+      if (_order?.status == 'ready') _startBuzzerLoop();
     }
   }
 
@@ -298,6 +357,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         centerTitle: true,
         backgroundColor: AppColors.darkGrey,
         actions: [
+          // Bell icon: let user re-enable pager if they skipped it earlier
+          if (!_buzzerAllowed && _hasSeenPagerPrompt && !isCancelled)
+            IconButton(
+              icon: const Icon(Icons.notifications_off_outlined, color: Colors.white38, size: 20),
+              tooltip: 'Aktifkan Pager Antrean',
+              onPressed: _promptReEnableBuzzer,
+            ),
           if (_order?.status == 'pending')
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
