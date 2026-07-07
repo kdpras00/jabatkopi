@@ -3,9 +3,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart' as flutter_secure_storage;
 import '../config/app_config.dart';
 import 'package:http/http.dart' as http;
-import 'session_manager.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -111,17 +111,18 @@ class NotificationService {
 
   Future<void> syncTokenToBackend(String fcmToken) async {
     try {
-      final token = await SessionManager.getToken();
-      final userId = await SessionManager.getUserId();
+      const storage = flutter_secure_storage.FlutterSecureStorage();
+      final token = await storage.read(key: 'jwt_token');
+      final userId = await storage.read(key: 'user_id');
       
       if (token == null || userId == null) return;
 
       await http.put(
-        Uri.parse('${AppConfig.apiUrl}/profile/fcm-token'),
+        Uri.parse('${AppConfig.laravelBaseUrl}/api/profile/fcm-token'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
-          'X-User-Id': userId.toString(),
+          'X-User-Id': userId,
         },
         body: jsonEncode({
           'fcm_token': fcmToken,
