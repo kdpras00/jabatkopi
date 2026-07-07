@@ -293,17 +293,13 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   ),
                 )
               : null,
-          extendBody: true,
+          extendBody: false,
           bottomNavigationBar: SafeArea(
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: const BoxDecoration(
                 color: AppColors.darkGrey,
-                borderRadius: BorderRadius.circular(40),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10)),
-                ],
+                border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
