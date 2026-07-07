@@ -24,8 +24,8 @@ jobs:
 
       - name: Install Composer Dependencies
         run: |
-          cd backend
-          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+          # Validate composer.json is valid only
+          cd backend && composer validate --no-check-publish
 
       - name: Deploy via tar+ssh
         env:
@@ -43,9 +43,10 @@ jobs:
           ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST \
             "mkdir -p ~/public_html/domains/jabatkopi.my.id"
 
-          # Stream tar directly over SSH — no rsync needed, -T disables PTY so .bashrc is silent
+          # Stream tar directly — exclude vendor, composer install on server instead
           tar -czf - \
             --exclude='backend/.env' \
+            --exclude='backend/vendor' \
             --exclude='backend/node_modules' \
             --exclude='backend/storage/app/public' \
             --exclude='backend/tests' \
@@ -67,6 +68,7 @@ jobs:
 
           ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST "
             cd ~/public_html/domains/jabatkopi.my.id
+            composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
