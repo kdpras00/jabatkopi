@@ -27,31 +27,31 @@ jobs:
           cd backend
           composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-      - name: Deploy via rsync over SSH
+      - name: Deploy via tar+ssh
         env:
           SSH_KEY: ${{ secrets.SSH_KEY_PRIVATE }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
           SSH_USER: ${{ secrets.SSH_USERNAME }}
           SSH_PORT: 2223
         run: |
-          # Setup SSH key
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts
 
-          # Ensure target directory exists
-          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST "mkdir -p ~/public_html/domains/jabatkopi.my.id"
+          # Ensure target exists
+          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST \
+            "mkdir -p ~/public_html/domains/jabatkopi.my.id"
 
-          # Rsync backend files directly (no zip needed)
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT" \
-            --exclude='.env' \
-            --exclude='node_modules/' \
-            --exclude='storage/app/public/' \
-            --exclude='tests/' \
-            backend/ \
-            $SSH_USER@$SSH_HOST:~/public_html/domains/jabatkopi.my.id/
+          # Stream tar directly over SSH — no rsync, no scp-action
+          tar -czf - \
+            --exclude='backend/.env' \
+            --exclude='backend/node_modules' \
+            --exclude='backend/storage/app/public' \
+            --exclude='backend/tests' \
+            -C backend . | \
+          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST \
+            "tar -xzf - -C ~/public_html/domains/jabatkopi.my.id"
 
       - name: Run Laravel Optimizations via SSH
         env:
