@@ -38,6 +38,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   bool _buzzerSilenced = false;
   bool _buzzerActive = false;
   Timer? _buzzerTimer;
+  bool _hasSeenPagerPrompt = false;
 
   @override
   void initState() {
@@ -45,7 +46,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     _orderRepo = OrderRepository(apiClient: ApiClient());
     _loadPagerPermissionPref();
     _fetchOrder();
-    // Polling berkala ke backend Go GORM setiap 10 detik untuk pembaruan real-time
     _timer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchOrder());
   }
 
@@ -53,9 +53,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final granted = prefs.getBool('pager_permission_granted') ?? false;
+      final hasSeenPrompt = prefs.getBool('has_seen_pager_prompt') ?? false;
       if (mounted) {
         setState(() {
           _buzzerAllowed = granted;
+          _hasSeenPagerPrompt = hasSeenPrompt;
         });
       }
     } catch (_) {}
@@ -75,7 +77,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       _buzzerActive = true;
     });
 
-    // Ring sound and vibrate immediately once
     HapticFeedback.vibrate();
     jsh.playWebBeep();
 
@@ -95,7 +96,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Future<void> _checkAndRequestBuzzerPermission() async {
-    if (_buzzerAllowed || _buzzerSilenced) return;
+    if (_hasSeenPagerPrompt || _buzzerSilenced) return;
     
     final result = await showDialog<bool>(
       context: context,
@@ -105,16 +106,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         child: Container(
           width: 270,
-          padding: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.only(top: 24, bottom: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.notifications_active, color: AppColors.caramelGold, size: 32),
-              const SizedBox(height: 12),
+              const Icon(Icons.notifications_active, color: AppColors.caramelGold, size: 36),
+              const SizedBox(height: 16),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Izinkan "Jabat Kopi" Mengaktifkan Pager Antrean?',
+                  'Mau Tahu Kapan Pesanan Siap?',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
@@ -123,20 +124,20 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 18),
                 child: Text(
-                  'Aplikasi akan bergetar dan membunyikan suara pager secara real-time saat pesanan kopi Anda siap diambil.',
+                  'Aktifkan getaran dan bunyi pager agar Anda langsung tahu saat kopi siap diambil dari meja barista tanpa perlu mengantre.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: Colors.white,
                     fontSize: 12,
-                    height: 1.4,
+                    height: 1.5,
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               const Divider(height: 1, color: Colors.white10),
               Row(
                 children: [
@@ -144,13 +145,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     child: TextButton(
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(bottomLeft: Radius.circular(14)),
-                        ),
                       ),
                       onPressed: () => Navigator.pop(context, false),
                       child: const Text(
-                        'Jangan Izinkan',
+                        'Nanti Saja',
                         style: TextStyle(color: Colors.white30, fontSize: 14),
                       ),
                     ),
@@ -164,13 +162,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     child: TextButton(
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(bottomRight: Radius.circular(14)),
-                        ),
                       ),
                       onPressed: () => Navigator.pop(context, true),
                       child: const Text(
-                        'Izinkan',
+                        'Aktifkan',
                         style: TextStyle(
                           color: AppColors.caramelGold,
                           fontWeight: FontWeight.bold,
@@ -191,13 +186,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       final granted = result == true;
       setState(() {
         _buzzerAllowed = granted;
+        _hasSeenPagerPrompt = true;
       });
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('pager_permission_granted', granted);
+        await prefs.setBool('has_seen_pager_prompt', true);
       } catch (_) {}
-      if (granted && _order?.status == 'ready') {
-        _startBuzzerLoop();
+      
+      if (granted) {
+        jsh.playWebBeep();
+        if (_order?.status == 'ready') {
+          _startBuzzerLoop();
+        }
       }
     }
   }

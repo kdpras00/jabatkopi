@@ -56,6 +56,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Timer? _buzzerTimer;
   bool _pagerPermissionGranted = false;
   bool _hasCheckedPermissionOnPrefs = false;
+  bool _hasSeenPagerPrompt = false;
 
   @override
   void initState() {
@@ -74,18 +75,13 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Future<void> _loadPagerPermissionPref() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final hasKey = prefs.containsKey('pager_permission_granted');
       final granted = prefs.getBool('pager_permission_granted') ?? false;
+      final hasSeenPrompt = prefs.getBool('has_seen_pager_prompt') ?? false;
       if (mounted) {
         setState(() {
           _pagerPermissionGranted = granted;
+          _hasSeenPagerPrompt = hasSeenPrompt;
           _hasCheckedPermissionOnPrefs = true;
-        });
-      }
-
-      if (!hasKey) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _checkAndRequestBuzzerPermission();
         });
       }
     } catch (_) {}
@@ -95,6 +91,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('pager_permission_granted', value);
+      await prefs.setBool('has_seen_pager_prompt', true);
     } catch (_) {}
   }
 
@@ -173,7 +170,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   }
 
   Future<void> _checkAndRequestBuzzerPermission() async {
-    if (_pagerPermissionGranted) return;
+    if (_hasSeenPagerPrompt || _pagerPermissionGranted) return;
 
     final result = await showDialog<bool>(
       context: context,
@@ -183,16 +180,16 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         child: Container(
           width: 270,
-          padding: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.only(top: 24, bottom: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.notifications_active, color: AppColors.caramelGold, size: 32),
-              const SizedBox(height: 12),
+              const Icon(Icons.notifications_active, color: AppColors.caramelGold, size: 36),
+              const SizedBox(height: 16),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Izinkan "Jabat Kopi" Mengaktifkan Pager Antrean?',
+                  'Mau Tahu Kapan Pesanan Siap?',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
@@ -201,20 +198,20 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 18),
                 child: Text(
-                  'Aplikasi akan bergetar dan membunyikan suara pager secara real-time saat pesanan kopi Anda siap diambil.',
+                  'Aktifkan getaran dan bunyi pager agar Anda langsung tahu saat kopi siap diambil dari meja barista tanpa perlu mengantre.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: Colors.white,
                     fontSize: 12,
-                    height: 1.4,
+                    height: 1.5,
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               const Divider(height: 1, color: Colors.white10),
               Row(
                 children: [
@@ -222,13 +219,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     child: TextButton(
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(bottomLeft: Radius.circular(14)),
-                        ),
                       ),
                       onPressed: () => Navigator.pop(context, false),
                       child: const Text(
-                        'Jangan Izinkan',
+                        'Nanti Saja',
                         style: TextStyle(color: Colors.white30, fontSize: 14),
                       ),
                     ),
@@ -242,13 +236,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     child: TextButton(
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(bottomRight: Radius.circular(14)),
-                        ),
                       ),
                       onPressed: () => Navigator.pop(context, true),
                       child: const Text(
-                        'Izinkan',
+                        'Aktifkan',
                         style: TextStyle(
                           color: AppColors.caramelGold,
                           fontWeight: FontWeight.bold,
@@ -269,6 +260,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       final granted = result == true;
       setState(() {
         _pagerPermissionGranted = granted;
+        _hasSeenPagerPrompt = true;
       });
       _savePagerPermissionPref(granted);
       if (granted && _ringingOrder != null) {
