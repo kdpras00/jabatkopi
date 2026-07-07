@@ -27,6 +27,17 @@ jobs:
           # Validate composer.json is valid only
           cd backend && composer validate --no-check-publish
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install NPM & Build Assets
+        run: |
+          cd backend
+          npm ci
+          npm run build
+
       - name: Deploy via tar+ssh
         env:
           SSH_KEY: ${{ secrets.SSH_KEY_PRIVATE }}
@@ -69,7 +80,7 @@ jobs:
 
           ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST "
             cd ~/public_html/domains/jabatkopi.my.id
-            composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+            ~/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-req=ext-sodium
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
