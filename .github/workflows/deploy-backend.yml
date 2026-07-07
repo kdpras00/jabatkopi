@@ -43,14 +43,14 @@ jobs:
           ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST \
             "mkdir -p ~/public_html/domains/jabatkopi.my.id"
 
-          # Stream tar directly over SSH — no rsync, no scp-action
+          # Stream tar directly over SSH — no rsync needed, -T disables PTY so .bashrc is silent
           tar -czf - \
             --exclude='backend/.env' \
             --exclude='backend/node_modules' \
             --exclude='backend/storage/app/public' \
             --exclude='backend/tests' \
             -C backend . | \
-          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST \
+          ssh -i ~/.ssh/deploy_key -p $SSH_PORT -T $SSH_USER@$SSH_HOST \
             "tar -xzf - -C ~/public_html/domains/jabatkopi.my.id"
 
       - name: Run Laravel Optimizations via SSH
