@@ -1,4 +1,4 @@
-name: 🚀 Deploy Laravel Backend (Rsync via SSH)
+name: 🚀 Deploy Laravel Backend
 
 on:
   push:
@@ -22,67 +22,54 @@ jobs:
           extensions: mbstring, xml, ctype, iconv, mysql, zip
           coverage: none
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Install Composer Dependencies
         run: |
           cd backend
           composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-      - name: Install NPM & Build Assets
+      - name: Deploy via rsync over SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY_PRIVATE }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USERNAME }}
+          SSH_PORT: 2223
         run: |
-          cd backend
-          npm ci
-          npm run build
+          # Setup SSH key
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts
 
-      - name: Create Deployment Zip
+          # Ensure target directory exists
+          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST "mkdir -p ~/public_html/domains/jabatkopi.my.id"
+
+          # Rsync backend files directly (no zip needed)
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT" \
+            --exclude='.env' \
+            --exclude='node_modules/' \
+            --exclude='storage/app/public/' \
+            --exclude='tests/' \
+            backend/ \
+            $SSH_USER@$SSH_HOST:~/public_html/domains/jabatkopi.my.id/
+
+      - name: Run Laravel Optimizations via SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY_PRIVATE }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USERNAME }}
+          SSH_PORT: 2223
         run: |
-          cd backend
-          zip -r ../deploy.zip . -x "node_modules/*" "tests/*" "phpunit.xml" ".env" "storage/app/public/*"
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts
 
-      - name: Ensure Target Directory Exists
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY_PRIVATE }}
-          port: 2223
-          script: |
-            mkdir -p ~/public_html/domains/jabatkopi.my.id
-
-      - name: Upload Zip via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY_PRIVATE }}
-          port: 2223
-          source: "deploy.zip"
-          target: "public_html/domains/jabatkopi.my.id"
-
-      - name: Extract Zip and Optimize via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY_PRIVATE }}
-          port: 2223
-          script: |
-            TARGET=~/public_html/domains/jabatkopi.my.id
-            echo "📦 Finding and moving deploy.zip..."
-            find $TARGET -name "deploy.zip" | xargs -I{} mv {} $TARGET/deploy.zip
-            
-            echo "📦 Extracting backend files..."
-            cd $TARGET
-            unzip -o deploy.zip
-            rm deploy.zip
-            
-            echo "🚀 Run Laravel optimizations..."
+          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST "
+            cd ~/public_html/domains/jabatkopi.my.id
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
-            echo "✅ Deploy finished!"
+            echo 'Deploy finished!'
+          "
