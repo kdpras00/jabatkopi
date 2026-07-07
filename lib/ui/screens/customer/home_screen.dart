@@ -74,11 +74,18 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Future<void> _loadPagerPermissionPref() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final hasKey = prefs.containsKey('pager_permission_granted');
       final granted = prefs.getBool('pager_permission_granted') ?? false;
       if (mounted) {
         setState(() {
           _pagerPermissionGranted = granted;
           _hasCheckedPermissionOnPrefs = true;
+        });
+      }
+
+      if (!hasKey) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkAndRequestBuzzerPermission();
         });
       }
     } catch (_) {}
@@ -171,30 +178,90 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (context) => Dialog(
         backgroundColor: AppColors.charcoal,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.notifications_active, color: AppColors.caramelGold),
-            const SizedBox(width: 8),
-            const Text('Notifikasi Pager Antrean', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: const Text(
-          'Aktifkan getaran dan suara pager agar Anda tahu persis kapan kopi siap diambil di meja barista?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('LEWATI', style: TextStyle(color: Colors.white30)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        child: Container(
+          width: 270,
+          padding: const EdgeInsets.only(top: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.notifications_active, color: AppColors.caramelGold, size: 32),
+              const SizedBox(height: 12),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Izinkan "Jabat Kopi" Mengaktifkan Pager Antrean?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Aplikasi akan bergetar dan membunyikan suara pager secara real-time saat pesanan kopi Anda siap diambil.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Divider(height: 1, color: Colors.white10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(bottomLeft: Radius.circular(14)),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text(
+                        'Jangan Izinkan',
+                        style: TextStyle(color: Colors.white30, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 44,
+                    color: Colors.white10,
+                  ),
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(bottomRight: Radius.circular(14)),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text(
+                        'Izinkan',
+                        style: TextStyle(
+                          color: AppColors.caramelGold,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('AKTIFKAN', style: TextStyle(color: AppColors.caramelGold, fontWeight: FontWeight.bold)),
-          ),
-        ],
+        ),
       ),
     );
 
