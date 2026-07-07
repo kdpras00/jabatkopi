@@ -103,21 +103,10 @@ class _AppStartupRouterState extends State<AppStartupRouter>
               Container(
                 width: 110,
                 height: 110,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.darkGrey,
-                  border: Border.all(color: AppColors.caramelGold, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.caramelGold.withValues(alpha: 0.3),
-                      blurRadius: 40,
-                      spreadRadius: 2,
-                    ),
-                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(3),
-                  child: ClipOval(
+                child: ClipOval(
                     child: Image.asset(
                       'assets/images/logojabatkopi.png',
                       fit: BoxFit.cover,
@@ -126,7 +115,6 @@ class _AppStartupRouterState extends State<AppStartupRouter>
                         size: 48,
                         color: AppColors.caramelGold,
                       ),
-                    ),
                   ),
                 ),
               ),

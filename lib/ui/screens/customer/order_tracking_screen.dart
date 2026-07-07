@@ -1,21 +1,15 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/network/api_client.dart';
 import '../../../data/models/order_model.dart';
 import '../../../data/repositories/order_repository.dart';
 import '../../widgets/jk_glass_card.dart';
 import '../../widgets/jk_primary_button.dart';
-import '../../widgets/jk_virtual_pager_disc.dart';
 import 'digital_receipt_screen.dart';
-import 'home_screen.dart';
 import '../../../core/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
-import '../../../core/utils/js_helper.dart'
-    if (dart.library.js) '../../../core/utils/js_helper_web.dart' as jsh;
 
 class OrderTrackingScreen extends StatefulWidget {
   final int orderId;
@@ -33,266 +27,30 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   bool _isLoading = true;
   bool _isCancelling = false;
 
-  // Virtual Pager state variables
-  bool _buzzerAllowed = false;
-  bool _buzzerSilenced = false;
-  bool _buzzerActive = false;
-  Timer? _buzzerTimer;
-  bool _hasSeenPagerPrompt = false;
-
   @override
   void initState() {
     super.initState();
     _orderRepo = OrderRepository(apiClient: ApiClient());
-    // FIX: await prefs first to eliminate race condition with _fetchOrder()
-    _loadPrefsAndStart();
-  }
-
-  Future<void> _loadPrefsAndStart() async {
-    await _loadPagerPermissionPref();
     _fetchOrder();
     _timer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchOrder());
-  }
-
-  Future<void> _loadPagerPermissionPref() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final granted = prefs.getBool('pager_permission_granted') ?? false;
-      final hasSeenPrompt = prefs.getBool('has_seen_pager_prompt') ?? false;
-      if (mounted) {
-        setState(() {
-          _buzzerAllowed = granted;
-          _hasSeenPagerPrompt = hasSeenPrompt;
-        });
-      }
-    } catch (_) {} // non-blocking: state already set via setState
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _buzzerTimer?.cancel();
     super.dispose();
   }
 
-  void _startBuzzerLoop() {
-    if (_buzzerTimer != null || _buzzerSilenced || !_buzzerAllowed) return;
-    
-    setState(() {
-      _buzzerActive = true;
-    });
 
-    // ponytail: deferred buzzer/pager alarm
-    // HapticFeedback.vibrate();
-    // jsh.playWebBeep();
-
-    _buzzerTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
-      // HapticFeedback.vibrate();
-      // jsh.playWebBeep();
-    });
-  }
-
-  void _stopBuzzer() {
-    _buzzerTimer?.cancel();
-    _buzzerTimer = null;
-    setState(() {
-      _buzzerActive = false;
-      _buzzerSilenced = true;
-    });
-  }
-
-  Future<void> _checkAndRequestBuzzerPermission() async {
-    // ponytail: deferred pager prompt
-    return;
-    // if (_hasSeenPagerPrompt || _buzzerSilenced) return;
-    
-    // UX: let user see the order status first, then show the prompt
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted || _hasSeenPagerPrompt) return;
-    
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: AppColors.charcoal,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        child: Container(
-          width: 270,
-          padding: const EdgeInsets.only(top: 24, bottom: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.notifications_active, color: AppColors.caramelGold, size: 36),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Mau Tahu Kapan Pesanan Siap?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18),
-                child: Text(
-                  'Aktifkan getaran dan bunyi pager agar Anda langsung tahu saat kopi siap diambil dari meja barista tanpa perlu mengantre.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Divider(height: 1, color: Colors.white10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text(
-                        // Explicit: 'Lewati Selamanya' — no false hope of "nanti"
-                        'Lewati',
-                        style: TextStyle(color: Colors.white30, fontSize: 14),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 44,
-                    color: Colors.white10,
-                  ),
-                  Expanded(
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onPressed: () {
-                        // FIX: unlock AudioContext immediately inside user gesture,
-                        // before any await that would expire the activation context
-                        // jsh.playWebBeep();
-                        Navigator.pop(context, true);
-                      },
-                      child: const Text(
-                        'Aktifkan',
-                        style: TextStyle(
-                          color: AppColors.caramelGold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (mounted) {
-      final granted = result == true;
-      setState(() {
-        _buzzerAllowed = granted;
-        _hasSeenPagerPrompt = true;
-      });
-      // persist async in background — audio already unlocked above inside onPressed
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.setBool('pager_permission_granted', granted);
-        prefs.setBool('has_seen_pager_prompt', true);
-      });
-      
-      if (granted && _order?.status == 'ready') {
-        _startBuzzerLoop();
-      }
-    }
-  }
-
-  // Re-enable pager: shows a mini prompt in AppBar when buzzer is not set
-  Future<void> _promptReEnableBuzzer() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.charcoal,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Row(
-          children: [
-            Icon(Icons.notifications_active, color: AppColors.caramelGold, size: 20),
-            SizedBox(width: 8),
-            Text('Aktifkan Pager?', style: TextStyle(color: Colors.white, fontSize: 16)),
-          ],
-        ),
-        content: const Text(
-          'Aktifkan bunyi dan getaran pager untuk pesanan ini?',
-          style: TextStyle(color: Colors.white70, fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Tidak', style: TextStyle(color: Colors.white30)),
-          ),
-          TextButton(
-            onPressed: () {
-              // jsh.playWebBeep(); // unlock audio in gesture context
-              Navigator.pop(context, true);
-            },
-            child: const Text('Aktifkan', style: TextStyle(color: AppColors.caramelGold, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-
-    if (mounted && result == true) {
-      setState(() {
-        _buzzerAllowed = true;
-        _hasSeenPagerPrompt = true;
-      });
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.setBool('pager_permission_granted', true);
-        prefs.setBool('has_seen_pager_prompt', true);
-      });
-      if (_order?.status == 'ready') _startBuzzerLoop();
-    }
-  }
 
   Future<void> _fetchOrder() async {
     try {
       final order = await _orderRepo.getOrderDetails(widget.orderId);
       if (mounted) {
-        final firstLoad = _order == null;
         setState(() {
           _order = order;
           _isLoading = false;
         });
-
-        // Trigger pager alarm if status is ready
-        if (order.status == 'ready' && !_buzzerSilenced) {
-          if (_buzzerAllowed) {
-            _startBuzzerLoop();
-          } else if (firstLoad) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _checkAndRequestBuzzerPermission();
-            });
-          }
-        } else if (order.status == 'completed' || order.status == 'cancelled') {
-          _stopBuzzer();
-        }
-
-        if (firstLoad && order.status != 'ready') {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _checkAndRequestBuzzerPermission();
-          });
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -351,25 +109,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     final isCancelled = _order?.status == 'cancelled';
-    // ponytail: deferred pager UI
-    // final isReady = _order?.status == 'ready' && !_buzzerSilenced;
-    final isReady = false;
 
     return Scaffold(
       backgroundColor: AppColors.charcoal,
       appBar: AppBar(
-        title: Text(isReady ? 'Panggilan Antrean' : 'Status Pesanan'),
-        centerTitle: true,
+        title: Text('Order #${_order?.id ?? ''}'),
         backgroundColor: AppColors.darkGrey,
         actions: [
-          // Bell icon: let user re-enable pager if they skipped it earlier
-          // ponytail: deferred bell icon
-          // if (!_buzzerAllowed && _hasSeenPagerPrompt && !isCancelled)
-          //   IconButton(
-          //     icon: const Icon(Icons.notifications_off_outlined, color: Colors.white38, size: 20),
-          //     tooltip: 'Aktifkan Pager Antrean',
-          //     onPressed: _promptReEnableBuzzer,
-          //   ),
           if (_order?.status == 'pending')
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
@@ -397,12 +143,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      if (isReady) ...[
-                        JkVirtualPagerDisc(
-                          isActive: _buzzerActive,
-                          onSilence: _stopBuzzer,
-                        ),
-                      ] else ...[
                         Icon(
                           isCancelled ? Icons.cancel_outlined : Icons.coffee,
                           size: 80,
@@ -484,7 +224,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             );
                           },
                         ),
-                      ],
                     ],
                   ),
                 ),

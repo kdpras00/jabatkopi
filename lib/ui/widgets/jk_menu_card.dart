@@ -119,7 +119,7 @@ class JkMenuCard extends StatelessWidget {
                       JkBounce(
                         onTap: onAdd,
                         child: Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             color: AppColors.caramelGold,
                             borderRadius: BorderRadius.circular(8),
@@ -130,9 +130,8 @@ class JkMenuCard extends StatelessWidget {
                     else
                       Container(
                         decoration: BoxDecoration(
-                          color: AppColors.caramelGold.withValues(alpha: 0.15),
+                          color: AppColors.caramelGold,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.caramelGold.withValues(alpha: 0.5)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -140,19 +139,22 @@ class JkMenuCard extends StatelessWidget {
                             JkBounce(
                               onTap: onRemove,
                               child: const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                child: Icon(Icons.remove, color: AppColors.caramelGold, size: 16),
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                child: Icon(Icons.remove, color: AppColors.charcoal, size: 20),
                               ),
                             ),
-                            Text(
-                              '$cartQuantity',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: Text(
+                                '$cartQuantity',
+                                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.charcoal, fontSize: 16),
+                              ),
                             ),
                             JkBounce(
                               onTap: onAdd,
                               child: const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                child: Icon(Icons.add, color: AppColors.caramelGold, size: 16),
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                child: Icon(Icons.add, color: AppColors.charcoal, size: 20),
                               ),
                             ),
                           ],

@@ -80,21 +80,10 @@ class _SplashScreenState extends State<SplashScreen> {
                           Container(
                             width: 220,
                             height: 220,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.darkGrey,
-                              border: Border.all(color: AppColors.caramelGold, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.caramelGold.withValues(alpha: 0.25),
-                                  blurRadius: 80,
-                                  spreadRadius: 8,
-                                )
-                              ],
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(6),
-                              child: ClipOval(
+                            child: ClipOval(
                                 child: data.containsKey('isLocalAsset')
                                     ? Image.asset(
                                         data['image']!,
@@ -107,8 +96,7 @@ class _SplashScreenState extends State<SplashScreen> {
                                         fit: BoxFit.cover,
                                         errorBuilder: (context, error, stackTrace) =>
                                             const Icon(Icons.coffee, size: 80, color: AppColors.caramelGold),
-                                      ),
-                              ),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 60),

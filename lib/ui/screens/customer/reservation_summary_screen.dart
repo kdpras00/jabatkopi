@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../widgets/jk_glass_card.dart';
-import '../../widgets/jk_primary_button.dart';
 
 class ReservationSummaryScreen extends StatelessWidget {
   final DateTime date;
@@ -64,7 +63,7 @@ class ReservationSummaryScreen extends StatelessWidget {
                       children: [
                         Text(
                           tableAssigned ? 'MEJA' : 'MEJA BELUM DITENTUKAN',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.white38,
                             letterSpacing: 1.5,
@@ -149,7 +148,7 @@ class ReservationSummaryScreen extends StatelessWidget {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Tunjukkan Booking ID atau QR Code ini kepada staf saat Anda tiba. Staf akan melakukan check-in dan menyiapkan meja Anda.',
+                            'Tunjukkan Booking ID ini kepada staf saat Anda tiba. Staf akan melakukan check-in dan menyiapkan meja Anda.',
                             style: TextStyle(fontSize: 12, color: Colors.white54, height: 1.5),
                           ),
                         ),

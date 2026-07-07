@@ -92,7 +92,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       ]
     },
     {
-      'title': 'QR Code',
+      'title': 'QRIS',
       'fee': 'Rp250',
       'methods': [
         {
@@ -105,6 +105,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
   ];
 
   Future<void> _handlePayment() async {
+    FocusScope.of(context).unfocus();
     if (_selectedMethod == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

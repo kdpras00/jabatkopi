@@ -16,11 +16,11 @@ void main() {
   group('Order Integration Test', () {
     test('createOrder returns order data on success', () async {
       // Create a mock order to the real backend
-      final items = [
+      final List<Map<String, dynamic>> items = [
         {'menu_id': 1, 'qty': 2, 'subtotal': 30000}
       ];
       
-      final result = await orderRepository.createOrder(4, 1, 30000, 'qris', items);
+      final result = await orderRepository.createOrder(4, 'qris', items);
       final order = result['order'] as Map<String, dynamic>;
       
       expect(order['id'], isNotNull);

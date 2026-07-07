@@ -8,7 +8,7 @@ import '../../widgets/jk_primary_button.dart';
 import '../../widgets/jk_horizontal_calendar.dart';
 import '../../widgets/jk_time_grid.dart';
 import '../../widgets/jk_guest_selector.dart';
-import '../../../core/services/notification_service.dart';
+
 import 'reservation_summary_screen.dart';
 
 class CustomerReservationScreen extends StatefulWidget {
@@ -39,12 +39,10 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
   }
 
   Future<void> _initNotifications() async {
-    // ponytail: deferred notification service init
-    // await NotificationService().initialize();
-    // await NotificationService().requestPermission();
   }
 
   void _submitReservation() async {
+    FocusScope.of(context).unfocus();
     if (_selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pilih waktu terlebih dahulu')),
@@ -67,14 +65,6 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
       final bookingId = resData['booking_id'] ?? 'JK-RES-${resData['id'] ?? resData['reservation_id']}';
       final qrCode = resData['barcode'] ?? resData['qr_code'] ?? bookingId;
       final assignedTableId = resData['table_id'] as int? ?? 0;
-
-      // ponytail: deferred showReservationNotification
-      // await NotificationService().showReservationNotification(
-      //   bookingId,
-      //   '$dateStr $_selectedTime',
-      //   assignedTableId,
-      //   _guestCount,
-      // );
 
       if (mounted) {
         Navigator.push(

@@ -52,12 +52,12 @@ new class extends Component
 
         <form wire:submit="login">
             @error('email')
-                <div class="p-3.5 bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 rounded-lg text-sm font-medium mb-6">
+                <div class="p-3.5 bg-coffee-danger text-black rounded-lg text-sm font-bold mb-6">
                     {{ $message }}
                 </div>
             @enderror
             @error('password')
-                <div class="p-3.5 bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 rounded-lg text-sm font-medium mb-6">
+                <div class="p-3.5 bg-coffee-danger text-black rounded-lg text-sm font-bold mb-6">
                     {{ $message }}
                 </div>
             @enderror

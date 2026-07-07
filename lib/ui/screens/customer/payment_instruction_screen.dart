@@ -189,7 +189,7 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
         ];
       case 'gopay':
         return [
-          'Pindai QR Code di atas menggunakan aplikasi Gojek Anda atau klik tombol "Buka GoPay" jika Anda berada di perangkat mobile.',
+          'Pindai kode QR di atas menggunakan aplikasi Gojek Anda atau klik tombol "Buka GoPay" jika Anda berada di perangkat mobile.',
           'Periksa nominal belanja Anda di aplikasi Gojek.',
           'Masukkan PIN GoPay Anda untuk menyelesaikan transaksi.'
         ];
@@ -402,7 +402,7 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
                             color: Colors.grey[200],
                             child: const Center(
                               child: Text(
-                                'Gagal memuat QR Code.\nSilakan coba lagi.',
+                                'Gagal memuat kode QR.\nSilakan coba lagi.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: Colors.black54, fontSize: 12),
                               ),
@@ -414,7 +414,7 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
                     const SizedBox(height: 12),
                     Text(
                       method == 'gopay'
-                          ? 'Pindai QR Code di atas menggunakan aplikasi Gojek Anda.'
+                          ? 'Pindai kode QR di atas menggunakan aplikasi Gojek Anda.'
                           : 'Mendukung pembayaran via ShopeePay, DANA, GoPay, OVO, LinkAja, & Mobile Banking.',
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.white54, fontSize: 11),

@@ -7,8 +7,6 @@ import 'widgets/jk_primary_button.dart';
 import 'main_navigator.dart';
 import 'register_screen.dart';
 
-import 'package:firebase_messaging/firebase_messaging.dart';
-import '../core/utils/notification_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
+    FocusScope.of(context).unfocus();
     final provider = context.read<AuthProvider>();
     try {
       final success = await provider.login(
@@ -35,16 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text,
       );
       if (success && mounted) {
-        // ponytail: deferred FCM token sync on login
-        // try {
-        //   final token = await FirebaseMessaging.instance.getToken();
-        //   if (token != null) {
-        //     await NotificationService().syncTokenToBackend(token);
-        //   }
-        // } catch (e) {
-        //   debugPrint("Failed to sync token on login: $e");
-        // }
-        
+        if (!mounted) return;
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (_, __, ___) => const MainNavigator(),

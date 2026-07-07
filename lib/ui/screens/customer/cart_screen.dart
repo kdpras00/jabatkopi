@@ -250,12 +250,12 @@ class _QtyBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.borderGrey),
+          color: AppColors.caramelGold,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 16, color: AppColors.caramelGold),
+        child: Icon(icon, size: 20, color: AppColors.charcoal),
       ),
     );
   }

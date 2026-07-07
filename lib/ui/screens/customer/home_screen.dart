@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
@@ -15,21 +14,16 @@ import '../../../data/repositories/menu_repository.dart';
 import '../../../data/repositories/order_repository.dart';
 import '../../../data/repositories/reservation_repository.dart';
 import '../../../core/network/api_client.dart';
-import '../../widgets/jk_glass_card.dart';
 import '../../widgets/jk_skeleton.dart';
 import '../../widgets/jk_page_route.dart';
 import '../../widgets/jk_menu_card.dart';
-import '../../widgets/jk_virtual_pager_disc.dart';
 import 'reservation_screen.dart';
 import 'reservation_summary_screen.dart';
 import 'cart_screen.dart';
 import 'order_tracking_screen.dart';
 import 'edit_profile_screen.dart';
 import 'security_screen.dart';
-import 'notification_screen.dart';
 import 'dart:convert';
-import '../../../core/utils/js_helper.dart'
-    if (dart.library.js) '../../../core/utils/js_helper_web.dart' as jsh;
 
 class CustomerHomeScreen extends StatefulWidget {
   const CustomerHomeScreen({super.key});
@@ -48,233 +42,21 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     const CustomerProfileTab(),
   ];
 
-  // Pager Checking and Buzzer states
-  Timer? _activeOrdersTimer;
-  final Set<int> _silencedOrderIds = {};
-  OrderModel? _ringingOrder;
-  bool _buzzerActive = false;
-  Timer? _buzzerTimer;
-  bool _pagerPermissionGranted = false;
-  bool _hasCheckedPermissionOnPrefs = false;
-  bool _hasSeenPagerPrompt = false;
-
   @override
   void initState() {
     super.initState();
-    _loadPagerPermissionPref();
-    _startActiveOrdersPolling();
   }
 
   @override
+  @override
   void dispose() {
-    _activeOrdersTimer?.cancel();
-    _buzzerTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> _loadPagerPermissionPref() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final granted = prefs.getBool('pager_permission_granted') ?? false;
-      final hasSeenPrompt = prefs.getBool('has_seen_pager_prompt') ?? false;
-      if (mounted) {
-        setState(() {
-          _pagerPermissionGranted = granted;
-          _hasSeenPagerPrompt = hasSeenPrompt;
-          _hasCheckedPermissionOnPrefs = true;
-        });
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _savePagerPermissionPref(bool value) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('pager_permission_granted', value);
-      await prefs.setBool('has_seen_pager_prompt', true);
-    } catch (_) {}
-  }
-
-  void _startActiveOrdersPolling() {
-    // Poll every 8 seconds for active orders
-    _activeOrdersTimer = Timer.periodic(const Duration(seconds: 8), (_) => _checkActiveOrders());
-    // Run an initial check after 2 seconds
-    Timer(const Duration(seconds: 2), () => _checkActiveOrders());
-  }
-
-  Future<void> _checkActiveOrders() async {
-    if (!mounted) return;
-    try {
-      final repo = OrderRepository(apiClient: ApiClient());
-      final activeOrders = await repo.getActiveOrders();
-      
-      if (!mounted) return;
-
-      // Find any order in 'ready' status that has not been silenced yet
-      OrderModel? readyOrder;
-      for (final order in activeOrders) {
-        if (order.status == 'ready' && !_silencedOrderIds.contains(order.id)) {
-          readyOrder = order;
-          break;
-        }
-      }
-
-      if (readyOrder != null) {
-        if (_ringingOrder?.id != readyOrder.id) {
-          setState(() {
-            _ringingOrder = readyOrder;
-          });
-          if (_pagerPermissionGranted) {
-            _startBuzzerLoop();
-          } else {
-            _checkAndRequestBuzzerPermission();
-          }
-        }
-      } else {
-        // If no ready orders, or currently ringing order is completed/cancelled, stop buzzer
-        if (_ringingOrder != null) {
-          _stopBuzzer();
-        }
-      }
-    } catch (_) {
-      // Quietly ignore network/auth errors in background check
-    }
-  }
-
-  void _startBuzzerLoop() {
-    if (_buzzerTimer != null || _ringingOrder == null || !_pagerPermissionGranted) return;
-    
-    setState(() {
-      _buzzerActive = true;
-    });
-
-    // ponytail: deferred buzzer/pager alarm
-    // HapticFeedback.vibrate();
-    // jsh.playWebBeep();
-
-    _buzzerTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
-      // HapticFeedback.vibrate();
-      // jsh.playWebBeep();
-    });
-  }
-
-  void _stopBuzzer() {
-    _buzzerTimer?.cancel();
-    _buzzerTimer = null;
-    if (_ringingOrder != null) {
-      _silencedOrderIds.add(_ringingOrder!.id);
-    }
-    setState(() {
-      _ringingOrder = null;
-      _buzzerActive = false;
-    });
-  }
-
-  Future<void> _checkAndRequestBuzzerPermission() async {
-    if (_hasSeenPagerPrompt || _pagerPermissionGranted) return;
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: AppColors.charcoal,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        child: Container(
-          width: 270,
-          padding: const EdgeInsets.only(top: 24, bottom: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.notifications_active, color: AppColors.caramelGold, size: 36),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Mau Tahu Kapan Pesanan Siap?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18),
-                child: Text(
-                  'Aktifkan getaran dan bunyi pager agar Anda langsung tahu saat kopi siap diambil dari meja barista tanpa perlu mengantre.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Divider(height: 1, color: Colors.white10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text(
-                        'Nanti Saja',
-                        style: TextStyle(color: Colors.white30, fontSize: 14),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 44,
-                    color: Colors.white10,
-                  ),
-                  Expanded(
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text(
-                        'Aktifkan',
-                        style: TextStyle(
-                          color: AppColors.caramelGold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (mounted) {
-      final granted = result == true;
-      setState(() {
-        _pagerPermissionGranted = granted;
-        _hasSeenPagerPrompt = true;
-      });
-      _savePagerPermissionPref(granted);
-      if (granted && _ringingOrder != null) {
-        _startBuzzerLoop();
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final cartProvider = context.watch<CartProvider>();
     final cartCount = cartProvider.items.length;
-    final totalAmount = cartProvider.totalAmount;
 
     return Stack(
       children: [
@@ -314,21 +96,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             ),
           ),
         ),
-        if (_ringingOrder != null && _pagerPermissionGranted)
-          Positioned.fill(
-            child: Container(
-              color: AppColors.charcoal,
-              child: SafeArea(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: JkVirtualPagerDisc(
-                    isActive: _buzzerActive,
-                    onSilence: _stopBuzzer,
-                  ),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -1007,7 +774,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
         ? _buildProfileSkeleton()
         : Consumer<AuthProvider>(
         builder: (context, auth, _) {
-          final username = _profileData?['username'] ?? auth.username;
+          final displayName = _profileData?['name'] ?? _profileData?['username'] ?? auth.username;
           final imageUrl = _profileData?['image_url'];
 
           return SingleChildScrollView(
@@ -1044,13 +811,13 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              username?.toUpperCase() ?? 'CUSTOMER',
+                              displayName?.toUpperCase() ?? 'CUSTOMER',
                               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
-                            Text(
+                            const Text(
                               'Member Jabat Kopi',
                               style: TextStyle(color: Colors.white38, fontSize: 13),
                             ),
@@ -1101,14 +868,7 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
                       ),
                       const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
-                      _buildProfileItem(
-                        context, 
-                        Icons.notifications_none, 
-                        'Notifications', 
-                        'Manage alerts & updates',
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen())),
-                      ),
-                      const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
+
                       _buildProfileItem(
                         context, 
                         Icons.security, 
@@ -1162,17 +922,6 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildStatCard(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: AppColors.caramelGold.withValues(alpha: 0.7), size: 20),
-        const SizedBox(height: 8),
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.white54)),
-      ],
     );
   }
 

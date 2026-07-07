@@ -29,9 +29,12 @@ class OrderController extends Controller
             $totalAmount = 0;
             $processedItems = [];
 
-            // Cek stok dan hitung subtotal & total
+            // ponytail: Bulk fetch all requested menus to avoid N+1 queries in loop
+            $menuIds = collect($items)->pluck('menu_id')->unique()->toArray();
+            $menus = DB::table('menus')->whereIn('id', $menuIds)->get()->keyBy('id');
+
             foreach ($items as $item) {
-                $menu = DB::table('menus')->where('id', $item['menu_id'])->first();
+                $menu = $menus->get($item['menu_id']);
                 if (!$menu || $menu->stock < $item['qty']) {
                     throw new \Exception('Stok tidak cukup atau menu tidak ditemukan: ' . ($menu->name ?? 'Unknown'));
                 }
@@ -46,34 +49,39 @@ class OrderController extends Controller
                 ];
             }
 
-            // Potong stok
-            foreach ($processedItems as $item) {
-                DB::table('menus')->where('id', $item['menu_id'])->decrement('stock', $item['qty']);
-            }
+            // Wrap all database operations in a transaction
+            $orderId = DB::transaction(function () use ($customerId, $tableId, $paymentMethod, $processedItems, $totalAmount) {
+                // Potong stok
+                foreach ($processedItems as $item) {
+                    DB::table('menus')->where('id', $item['menu_id'])->decrement('stock', $item['qty']);
+                }
 
-            $orderId = DB::table('orders')->insertGetId([
-                'customer_id' => $customerId,
-                'table_id' => $tableId == 0 ? null : $tableId,
-                'is_walk_in' => true,
-                'reservation_id' => null,
-                'total_amount' => $totalAmount,
-                'status' => 'pending',
-                'payment_method' => $paymentMethod,
-                'staff_name' => 'SISTEM',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            foreach ($processedItems as $item) {
-                DB::table('order_items')->insert([
-                    'order_id' => $orderId,
-                    'menu_id' => $item['menu_id'],
-                    'qty' => $item['qty'],
-                    'subtotal' => $item['subtotal'],
+                $id = DB::table('orders')->insertGetId([
+                    'customer_id' => $customerId,
+                    'table_id' => $tableId == 0 ? null : $tableId,
+                    'is_walk_in' => true,
+                    'reservation_id' => null,
+                    'total_amount' => $totalAmount,
+                    'status' => 'pending',
+                    'payment_method' => $paymentMethod,
+                    'staff_name' => 'SISTEM',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-            }
+
+                foreach ($processedItems as $item) {
+                    DB::table('order_items')->insert([
+                        'order_id' => $id,
+                        'menu_id' => $item['menu_id'],
+                        'qty' => $item['qty'],
+                        'subtotal' => $item['subtotal'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                return $id;
+            });
 
             $result = $orderId;
 
@@ -218,21 +226,26 @@ class OrderController extends Controller
             ->orderBy('orders.created_at', 'desc')
             ->get();
 
-        foreach ($orders as $order) {
-            $items = DB::table('order_items')
+        if ($orders->isNotEmpty()) {
+            // ponytail: 1 bulk query instead of N per-order queries
+            $orderIds = $orders->pluck('id');
+            $allItems = DB::table('order_items')
                 ->select('order_items.*', 'menus.name as menu_name', 'menus.image_url')
                 ->leftJoin('menus', 'order_items.menu_id', '=', 'menus.id')
-                ->where('order_items.order_id', $order->id)
-                ->get();
-            
-            // ponytail: dynamically replace absolute URLs to use our custom CORS image proxy
-            foreach ($items as $item) {
-                if ($item->image_url && str_contains($item->image_url, '/storage/menus/')) {
-                    $filename = basename(parse_url($item->image_url, PHP_URL_PATH));
-                    $item->image_url = url('/api/images/menus/' . $filename);
+                ->whereIn('order_items.order_id', $orderIds)
+                ->get()
+                ->groupBy('order_id');
+
+            foreach ($orders as $order) {
+                $items = $allItems->get($order->id, collect());
+                foreach ($items as $item) {
+                    if ($item->image_url && str_contains($item->image_url, '/storage/menus/')) {
+                        $filename = basename(parse_url($item->image_url, PHP_URL_PATH));
+                        $item->image_url = url('/api/images/menus/' . $filename);
+                    }
                 }
+                $order->items = $items->values();
             }
-            $order->items = $items;
         }
 
         return response()->json(['status' => 200, 'message' => 'Success', 'data' => $orders]);
@@ -317,28 +330,6 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         DB::table('orders')->where('id', $id)->update(['status' => $request->status, 'updated_at' => now()]);
-
-        if ($request->status === 'ready') {
-            try {
-                $order = DB::table('orders')->where('id', $id)->first();
-                if ($order && $order->customer_id) {
-                    $user = DB::table('users')->where('id', $order->customer_id)->first();
-                    if ($user && !empty($user->fcm_token)) {
-                        $messaging = app('firebase.messaging');
-                        $message = \Kreait\Firebase\Messaging\CloudMessage::withTarget('token', $user->fcm_token)
-                            ->withNotification(\Kreait\Firebase\Messaging\Notification::create(
-                                'Pesanan Siap Diambil!',
-                                'Pesanan kopi Anda sudah jadi dan siap dinikmati di meja pengambilan.'
-                            ))
-                            ->withData(['order_id' => $id, 'status' => 'ready']);
-                        
-                        $messaging->send($message);
-                    }
-                }
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('FCM Send Error: ' . $e->getMessage());
-            }
-        }
 
         return response()->json(['status' => 200, 'message' => 'Status updated']);
     }

@@ -40,13 +40,13 @@ class PaymentController extends Controller
         } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
             $newStatus = 'cancelled';
             if ($oldStatus !== 'cancelled') {
-                $items = DB::table('order_items')->where('order_id', $order->id)->get();
-                foreach ($items as $item) {
-                    $menu = Menu::find($item->menu_id);
-                    if ($menu) {
-                        $menu->increment('stock', $item->qty);
-                    }
-                }
+                // ponytail: bulk update instead of N+1 queries
+                DB::table('menus')
+                    ->joinSub(
+                        DB::table('order_items')->where('order_id', $order->id)->select('menu_id', 'qty'),
+                        'oi', 'oi.menu_id', '=', 'menus.id'
+                    )
+                    ->update(['menus.stock' => DB::raw('menus.stock + oi.qty')]);
             }
             if ($order->table_id) {
                 Table::find($order->table_id)->update(['status' => 'available']);

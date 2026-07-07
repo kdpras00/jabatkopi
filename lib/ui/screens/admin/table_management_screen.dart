@@ -136,11 +136,11 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // QR Code Ref field
-                _buildTextField('Kode Referensi Meja', qrController, Icons.qr_code),
+                // Table identifier field
+                _buildTextField('Nomor Meja', qrController, Icons.tag),
                 const SizedBox(height: 8),
                 const Text(
-                  'Kode unik untuk identifikasi meja (misal: JK-TABLE-7)',
+                  'Nomor atau kode unik untuk identifikasi meja (misal: JK-TABLE-7)',
                   style: TextStyle(color: Colors.white38, fontSize: 11),
                 ),
                 const SizedBox(height: 32),

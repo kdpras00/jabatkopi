@@ -78,17 +78,20 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8',
+            'role' => 'in:customer,staff',
         ]);
 
-        $customerId = auth()->id();
-        if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
-        DB::table('users')->where('id', $customerId)->update([
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $user = User::create([
             'name' => $request->name,
-            'username' => $request->username,
             'email' => $request->email,
-            'image_url' => $request->image_url,
-            'updated_at' => now(),
+            'password' => Hash::make($request->password),
+            'role' => $request->role ?? 'customer',
         ]);
         return response()->json(['status' => 200, 'message' => 'Profil berhasil diperbarui!']);
     }
@@ -110,22 +113,4 @@ class AuthController extends Controller
         return response()->json(['status' => 200, 'message' => 'Password berhasil diperbarui!']);
     }
 
-    public function updateFcmToken(Request $request)
-    {
-        $request->validate([
-            'fcm_token' => 'required|string',
-        ]);
-
-        $customerId = auth()->id();
-        if (!$customerId) {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
-
-        DB::table('users')->where('id', $customerId)->update([
-            'fcm_token' => $request->fcm_token,
-            'updated_at' => now(),
-        ]);
-
-        return response()->json(['status' => 200, 'message' => 'FCM Token updated successfully']);
-    }
 }

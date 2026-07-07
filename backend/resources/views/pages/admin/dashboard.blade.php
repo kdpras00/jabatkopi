@@ -333,9 +333,9 @@ new class extends Component
                                         <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-danger font-bold">{{ $lowMenu->stock }}</td>
                                         <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
                                             @if($lowMenu->stock == 0)
-                                                <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Habis</span>
+                                                <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Habis</span>
                                             @else
-                                                <span class="bg-coffee-primary/10 text-coffee-primary px-2 py-1 rounded text-xs font-semibold">Hampir Habis</span>
+                                                <span class="bg-amber-500 text-black px-2 py-1 rounded text-xs font-semibold">Hampir Habis</span>
                                             @endif
                                         </td>
                                     </tr>
@@ -355,9 +355,9 @@ new class extends Component
                                 <div class="flex justify-between items-center">
                                     <span class="font-semibold text-coffee-text text-sm">{{ $lowMenu->name }}</span>
                                     @if($lowMenu->stock == 0)
-                                        <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Habis</span>
+                                        <span class="bg-coffee-danger text-black px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Habis</span>
                                     @else
-                                        <span class="bg-coffee-primary/10 text-coffee-primary px-2 py-0.5 rounded text-[10px] font-semibold">Hampir Habis</span>
+                                        <span class="bg-amber-500 text-black px-2 py-0.5 rounded text-[10px] font-semibold">Hampir Habis</span>
                                     @endif
                                 </div>
                                 <div class="flex justify-between text-xs text-coffee-muted">
@@ -410,7 +410,7 @@ new class extends Component
                         <thead>
                             <tr>
                                 <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">ID</th>
-                                <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Referensi QR Code</th>
+                                <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Nomor Meja</th>
                                 <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Kapasitas</th>
                                 <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Status</th>
                                 <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider text-right">Aksi</th>
@@ -424,18 +424,18 @@ new class extends Component
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">{{ $table->capacity }} Orang</td>
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
                                         @if($table->status === 'available')
-                                            <span class="bg-coffee-success/15 text-coffee-success border border-coffee-success/30 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Tersedia</span>
+                                            <span class="bg-coffee-success text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Tersedia</span>
                                         @elseif($table->status === 'occupied')
-                                            <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Terisi</span>
+                                            <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Terisi</span>
                                         @else
-                                            <span class="bg-coffee-primary/15 text-coffee-primary border border-coffee-primary/30 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">{{ $table->status }}</span>
+                                            <span class="bg-amber-500 text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">{{ $table->status }}</span>
                                         @endif
                                     </td>
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text text-right">
-                                        <button wire:click="editTable({{ $table->id }})" class="py-1.5 px-3 bg-coffee-primary/15 border border-coffee-border text-coffee-primary rounded font-semibold hover:bg-coffee-primary/30 transition-all text-xs mr-1.5 cursor-pointer">
+                                        <button wire:click="editTable({{ $table->id }})" class="py-1.5 px-3 bg-amber-500 text-black rounded font-bold hover:bg-amber-600 transition-all text-xs mr-1.5 cursor-pointer">
                                             Ubah
                                         </button>
-                                        <button onclick="confirmDelete('Hapus Meja?', 'Apakah Anda yakin ingin menghapus meja ini?', () => @this.deleteTable({{ $table->id }}))" class="py-1.5 px-3 bg-coffee-danger/15 border border-coffee-danger/30 text-coffee-danger rounded font-semibold hover:bg-coffee-danger/35 transition-all text-xs cursor-pointer">
+                                        <button onclick="confirmDelete('Hapus Meja?', 'Apakah Anda yakin ingin menghapus meja ini?', () => @this.deleteTable({{ $table->id }}))" class="py-1.5 px-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs cursor-pointer">
                                             Hapus
                                         </button>
                                     </td>
@@ -453,20 +453,20 @@ new class extends Component
                 <div class="block md:hidden space-y-4">
                     @forelse($tables as $table)
                         <div class="bg-black/40 border border-coffee-border/60 rounded-xl p-4 flex flex-col gap-3 shadow-md">
-                            <div class="flex justify-between items-center">
+                             <div class="flex justify-between items-center">
                                 <span class="text-xs text-coffee-muted font-bold">ID: #{{ $table->id }}</span>
                                 @if($table->status === 'available')
-                                    <span class="bg-coffee-success/15 text-coffee-success border border-coffee-success/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Tersedia</span>
+                                    <span class="bg-coffee-success text-black px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Tersedia</span>
                                 @elseif($table->status === 'occupied')
-                                    <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Terisi</span>
+                                    <span class="bg-coffee-danger text-black px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Terisi</span>
                                 @else
-                                    <span class="bg-coffee-primary/15 text-coffee-primary border border-coffee-primary/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{{ $table->status }}</span>
+                                    <span class="bg-amber-500 text-black px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{{ $table->status }}</span>
                                 @endif
                             </div>
                             
                             <div class="flex justify-between items-center text-sm border-t border-b border-coffee-border/20 py-2">
                                 <div>
-                                    <span class="block text-xxs text-coffee-muted uppercase">Referensi QR</span>
+                                    <span class="block text-xxs text-coffee-muted uppercase">Nomor Meja</span>
                                     <span class="font-semibold text-coffee-text font-mono">{{ $table->qr_code_ref }}</span>
                                 </div>
                                 <div class="text-right">
@@ -476,10 +476,10 @@ new class extends Component
                             </div>
                             
                             <div class="flex justify-end gap-2 mt-1">
-                                <button wire:click="editTable({{ $table->id }})" class="py-1.5 px-3 bg-coffee-primary/15 border border-coffee-border text-coffee-primary rounded font-semibold hover:bg-coffee-primary/30 transition-all text-xs cursor-pointer">
+                                <button wire:click="editTable({{ $table->id }})" class="py-1.5 px-3 bg-amber-500 text-black rounded font-bold hover:bg-amber-600 transition-all text-xs cursor-pointer">
                                     Ubah
                                 </button>
-                                <button onclick="confirmDelete('Hapus Meja?', 'Apakah Anda yakin ingin menghapus meja ini?', () => @this.deleteTable({{ $table->id }}))" class="py-1.5 px-3 bg-coffee-danger/15 border border-coffee-danger/30 text-coffee-danger rounded font-semibold hover:bg-coffee-danger/35 transition-all text-xs cursor-pointer">
+                                <button onclick="confirmDelete('Hapus Meja?', 'Apakah Anda yakin ingin menghapus meja ini?', () => @this.deleteTable({{ $table->id }}))" class="py-1.5 px-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs cursor-pointer">
                                     Hapus
                                 </button>
                             </div>
@@ -498,7 +498,7 @@ new class extends Component
                     </div>
                     <form wire:submit.prevent="saveTable">
                         <div class="mb-5">
-                            <label for="tableQrRef" class="block mb-2 text-sm text-coffee-muted font-medium">Referensi QR Code</label>
+                            <label for="tableQrRef" class="block mb-2 text-sm text-coffee-muted font-medium">Nomor Meja</label>
                             <input type="text" id="tableQrRef" wire:model="tableQrRef" class="w-full py-3 px-4 bg-black/80 border border-coffee-border rounded-lg text-coffee-text text-base focus:outline-none focus:border-coffee-primary focus:shadow-[0_0_10px_var(--color-coffee-primary-glow)] transition-all" placeholder="MEJA-01" required>
                             @error('tableQrRef') <span class="text-coffee-danger text-xs mt-1 block">{{ $message }}</span> @enderror
                         </div>
@@ -574,16 +574,16 @@ new class extends Component
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text align-middle">{{ $menu->stock }} pcs</td>
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text align-middle">
                                         @if($menu->is_available && $menu->stock > 0)
-                                            <span class="bg-coffee-success/15 text-coffee-success border border-coffee-success/30 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Tersedia</span>
+                                            <span class="bg-coffee-success text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Tersedia</span>
                                         @else
-                                            <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Habis</span>
+                                            <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Habis</span>
                                         @endif
                                     </td>
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text text-right align-middle">
-                                        <button wire:click="editMenu({{ $menu->id }})" class="py-1.5 px-3 bg-coffee-primary/15 border border-coffee-border text-coffee-primary rounded font-semibold hover:bg-coffee-primary/30 transition-all text-xs mr-1.5 cursor-pointer">
+                                        <button wire:click="editMenu({{ $menu->id }})" class="py-1.5 px-3 bg-amber-500 text-black rounded font-bold hover:bg-amber-600 transition-all text-xs mr-1.5 cursor-pointer">
                                             Ubah
                                         </button>
-                                        <button onclick="confirmDelete('Hapus Item Menu?', 'Apakah Anda yakin ingin menghapus item menu ini?', () => @this.deleteMenu({{ $menu->id }}))" class="py-1.5 px-3 bg-coffee-danger/15 border border-coffee-danger/30 text-coffee-danger rounded font-semibold hover:bg-coffee-danger/35 transition-all text-xs cursor-pointer">
+                                        <button onclick="confirmDelete('Hapus Item Menu?', 'Apakah Anda yakin ingin menghapus item menu ini?', () => @this.deleteMenu({{ $menu->id }}))" class="py-1.5 px-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs cursor-pointer">
                                             Hapus
                                         </button>
                                     </td>
@@ -613,27 +613,27 @@ new class extends Component
                                     <div class="flex justify-between items-start gap-2">
                                         <h4 class="font-bold text-coffee-text text-base truncate">{{ $menu->name }}</h4>
                                         @if($menu->is_available && $menu->stock > 0)
-                                            <span class="bg-coffee-success/15 text-coffee-success border border-coffee-success/30 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0">Ada</span>
+                                            <span class="bg-coffee-success text-black px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0">Ada</span>
                                         @else
-                                            <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0">Habis</span>
+                                            <span class="bg-coffee-danger text-black px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0">Habis</span>
                                         @endif
                                     </div>
                                     <span class="text-xs text-coffee-muted capitalize">{{ $menu->category }}</span>
                                     <div class="text-coffee-primary font-bold text-sm mt-1">Rp {{ number_format($menu->price, 0, ',', '.') }}</div>
                                 </div>
-                            </div>
-                            
-                            <div class="flex justify-between items-center text-xs border-t border-coffee-border/20 pt-3 mt-1">
+                             </div>
+                             
+                             <div class="flex justify-between items-center text-xs border-t border-coffee-border/20 pt-3 mt-1">
                                 <span class="text-coffee-muted">Stok: <strong class="text-coffee-text">{{ $menu->stock }} pcs</strong></span>
                                 <div class="flex gap-2">
-                                    <button wire:click="editMenu({{ $menu->id }})" class="py-1.5 px-3 bg-coffee-primary/15 border border-coffee-border text-coffee-primary rounded font-semibold hover:bg-coffee-primary/30 transition-all text-xs cursor-pointer">
+                                    <button wire:click="editMenu({{ $menu->id }})" class="py-1.5 px-3 bg-amber-500 text-black rounded font-bold hover:bg-amber-600 transition-all text-xs cursor-pointer">
                                         Ubah
                                     </button>
-                                    <button onclick="confirmDelete('Hapus Item Menu?', 'Apakah Anda yakin ingin menghapus item menu ini?', () => @this.deleteMenu({{ $menu->id }}))" class="py-1.5 px-3 bg-coffee-danger/15 border border-coffee-danger/30 text-coffee-danger rounded font-semibold hover:bg-coffee-danger/35 transition-all text-xs cursor-pointer">
+                                    <button onclick="confirmDelete('Hapus Item Menu?', 'Apakah Anda yakin ingin menghapus item menu ini?', () => @this.deleteMenu({{ $menu->id }}))" class="py-1.5 px-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs cursor-pointer">
                                         Hapus
                                     </button>
                                 </div>
-                            </div>
+                             </div>
                         </div>
                     @empty
                         <div class="text-center text-coffee-muted py-8 text-sm">Belum ada item menu terdaftar.</div>
@@ -778,16 +778,16 @@ new class extends Component
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">{{ $user->email }}</td>
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
                                         @if($user->role === 'admin')
-                                            <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Admin</span>
+                                            <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Admin</span>
                                         @else
-                                            <span class="bg-coffee-primary/15 text-coffee-primary border border-coffee-primary/30 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Pegawai</span>
+                                            <span class="bg-amber-500 text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Pegawai</span>
                                         @endif
                                     </td>
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text text-right">
-                                        <button wire:click="editStaff({{ $user->id }})" class="py-1.5 px-3 bg-coffee-primary/15 border border-coffee-border text-coffee-primary rounded font-semibold hover:bg-coffee-primary/30 transition-all text-xs mr-1.5 cursor-pointer">
+                                        <button wire:click="editStaff({{ $user->id }})" class="py-1.5 px-3 bg-amber-500 text-black rounded font-bold hover:bg-amber-600 transition-all text-xs mr-1.5 cursor-pointer">
                                             Ubah
                                         </button>
-                                        <button onclick="confirmDelete('Hapus Akun Pegawai?', 'Apakah Anda yakin ingin menghapus akun staff ini?', () => @this.deleteStaff({{ $user->id }}))" class="py-1.5 px-3 bg-coffee-danger/15 border border-coffee-danger/30 text-coffee-danger rounded font-semibold hover:bg-coffee-danger/35 transition-all text-xs cursor-pointer" {{ $user->id === auth()->user()->id ? 'disabled style=opacity:0.4;cursor:default;' : '' }}>
+                                        <button onclick="confirmDelete('Hapus Akun Pegawai?', 'Apakah Anda yakin ingin menghapus akun staff ini?', () => @this.deleteStaff({{ $user->id }}))" class="py-1.5 px-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs cursor-pointer" {{ $user->id === auth()->user()->id ? 'disabled style=opacity:0.4;cursor:default;' : '' }}>
                                             Hapus
                                         </button>
                                     </td>
@@ -807,11 +807,11 @@ new class extends Component
                         <div class="bg-black/40 border border-coffee-border/60 rounded-xl p-4 flex flex-col gap-2 shadow-md">
                             <div class="flex justify-between items-center">
                                 <h4 class="font-bold text-coffee-text text-base">{{ $user->name }}</h4>
-                                @if($user->role === 'admin')
-                                    <span class="bg-coffee-danger/15 text-coffee-danger border border-coffee-danger/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Admin</span>
-                                @else
-                                    <span class="bg-coffee-primary/15 text-coffee-primary border border-coffee-primary/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Pegawai</span>
-                                @endif
+                                 @if($user->role === 'admin')
+                                    <span class="bg-coffee-danger text-black px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Admin</span>
+                                 @else
+                                    <span class="bg-amber-500 text-black px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Pegawai</span>
+                                 @endif
                             </div>
                             
                             <div class="text-xs text-coffee-muted space-y-1.5 py-2 border-t border-b border-coffee-border/20 my-1">
@@ -820,10 +820,10 @@ new class extends Component
                             </div>
                             
                             <div class="flex justify-end gap-2 mt-1">
-                                <button wire:click="editStaff({{ $user->id }})" class="py-1.5 px-3 bg-coffee-primary/15 border border-coffee-border text-coffee-primary rounded font-semibold hover:bg-coffee-primary/30 transition-all text-xs cursor-pointer">
+                                <button wire:click="editStaff({{ $user->id }})" class="py-1.5 px-3 bg-amber-500 text-black rounded font-bold hover:bg-amber-600 transition-all text-xs cursor-pointer">
                                     Ubah
                                 </button>
-                                <button onclick="confirmDelete('Hapus Akun Pegawai?', 'Apakah Anda yakin ingin menghapus akun staff ini?', () => @this.deleteStaff({{ $user->id }}))" class="py-1.5 px-3 bg-coffee-danger/15 border border-coffee-danger/30 text-coffee-danger rounded font-semibold hover:bg-coffee-danger/35 transition-all text-xs cursor-pointer" {{ $user->id === auth()->user()->id ? 'disabled style=opacity:0.4;cursor:default;' : '' }}>
+                                <button onclick="confirmDelete('Hapus Akun Pegawai?', 'Apakah Anda yakin ingin menghapus akun staff ini?', () => @this.deleteStaff({{ $user->id }}))" class="py-1.5 px-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs cursor-pointer" {{ $user->id === auth()->user()->id ? 'disabled style=opacity:0.4;cursor:default;' : '' }}>
                                     Hapus
                                 </button>
                             </div>

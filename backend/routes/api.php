@@ -7,7 +7,6 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\ReservationController;
-use App\Http\Controllers\Api\NotificationController;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -16,7 +15,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::put('/profile/password', [AuthController::class, 'updatePassword']);
-    Route::put('/profile/fcm-token', [AuthController::class, 'updateFcmToken']);
 });
 
 Route::get('/menus', [MenuController::class, 'index']);
@@ -35,7 +33,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/history', [OrderController::class, 'history']);
     Route::get('/orders/active', [OrderController::class, 'active']);
     Route::get('/reservations/active', [ReservationController::class, 'active']);
-    Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
 });
 
 
