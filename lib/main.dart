@@ -20,7 +20,8 @@ void main() async {
 
     // Initialize Notification Service
     try {
-      await NotificationService().initialize();
+      // ponytail: deferred notification service init
+      // await NotificationService().initialize();
     } catch (e) {
       debugPrint("FCM Init error: $e");
     }

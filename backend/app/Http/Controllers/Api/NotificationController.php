@@ -9,7 +9,7 @@ class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
         if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
 
         $notifications = DB::table('notifications')

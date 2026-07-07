@@ -15,7 +15,7 @@ class ReservationRepository {
     }
   }
 
-  Future<Map<String, dynamic>> createReservation(String date, String time, int guests, int customerId, int tableId) async {
+  Future<Map<String, dynamic>> createReservation(String date, String time, int guests, int tableId) async {
     try {
       final response = await apiClient.post('/reservations', {
         'table_id': tableId,

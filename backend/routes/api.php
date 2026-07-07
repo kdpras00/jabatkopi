@@ -12,79 +12,91 @@ use App\Http\Controllers\Api\NotificationController;
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 
-Route::get('/profile', [AuthController::class, 'profile']);
-Route::put('/profile', [AuthController::class, 'updateProfile']);
-Route::put('/profile/password', [AuthController::class, 'updatePassword']);
-Route::put('/profile/fcm-token', [AuthController::class, 'updateFcmToken']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/profile', [AuthController::class, 'profile']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/profile/password', [AuthController::class, 'updatePassword']);
+    Route::put('/profile/fcm-token', [AuthController::class, 'updateFcmToken']);
+});
 
 Route::get('/menus', [MenuController::class, 'index']);
-Route::post('/admin/menus', [MenuController::class, 'store']);
-Route::put('/admin/menus/{id}', [MenuController::class, 'update']);
-Route::delete('/admin/menus/{id}', [MenuController::class, 'destroy']);
 
 Route::get('/tables', [TableController::class, 'index']);
-Route::post('/admin/tables', [TableController::class, 'store']);
-Route::put('/admin/tables/{id}', [TableController::class, 'update']);
-Route::delete('/admin/tables/{id}', [TableController::class, 'destroy']);
 
 Route::get('/tables/with-reservations', [TableController::class, 'getWithReservations']);
-Route::get('/admin/tables/with-reservations', [TableController::class, 'getWithReservations']);
 
-Route::get('/reservations', [ReservationController::class, 'index']);
-Route::get('/reservations/history', [ReservationController::class, 'index']); // endpoint mapping for Flutter
-Route::post('/reservations', [ReservationController::class, 'store']);
-Route::put('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/reservations', [ReservationController::class, 'index']);
+    Route::get('/reservations/history', [ReservationController::class, 'index']); // endpoint mapping for Flutter
+    Route::post('/reservations', [ReservationController::class, 'store']);
+    Route::put('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
+    
+    Route::post('/orders', [OrderController::class, 'create']);
+    Route::get('/orders/history', [OrderController::class, 'history']);
+    Route::get('/orders/active', [OrderController::class, 'active']);
+    Route::get('/reservations/active', [ReservationController::class, 'active']);
+    Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+});
 
-Route::get('/admin/reservations', [ReservationController::class, 'adminIndex']);
-Route::put('/admin/reservations/{id}/status', [ReservationController::class, 'updateStatus']);
 
-Route::post('/orders', [OrderController::class, 'create']);
-Route::get('/orders/history', [OrderController::class, 'history']);
 // --- PONYTAIL: MISSING ENDPOINTS FIX ---
 // Orders
-Route::get('/orders/active', [OrderController::class, 'active']);
 Route::get('/orders/table/{tableId}', [OrderController::class, 'byTable']);
 Route::get('/orders/{id}/details', [OrderController::class, 'details']);
 Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
 Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
 
 // Reservations
-Route::get('/reservations/active', [ReservationController::class, 'active']);
-Route::put('/admin/reservations/{id}/arrive', function($id) {
-    DB::table('reservations')->where('id', $id)->update(['status' => 'checked_in']);
-    return response()->json(['status' => 200]);
-});
-Route::put('/admin/reservations/{id}/complete', function($id) {
-    DB::table('reservations')->where('id', $id)->update(['status' => 'completed']);
-    return response()->json(['status' => 200]);
-});
-
 // Tables
 Route::get('/tables/available', [TableController::class, 'available']);
-Route::get('/admin/tables', [TableController::class, 'index']); // admin uses same index
-Route::put('/admin/tables/{id}/status', [TableController::class, 'updateStatus']);
 
-// Users & Analytics (Mocks to prevent 404 console errors)
-Route::get('/admin/users', function() {
-    return response()->json(['status' => 200, 'data' => DB::table('users')->get()]);
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    // Menus
+    Route::post('/admin/menus', [MenuController::class, 'store']);
+    Route::put('/admin/menus/{id}', [MenuController::class, 'update']);
+    Route::delete('/admin/menus/{id}', [MenuController::class, 'destroy']);
+    
+    // Tables
+    Route::post('/admin/tables', [TableController::class, 'store']);
+    Route::put('/admin/tables/{id}', [TableController::class, 'update']);
+    Route::delete('/admin/tables/{id}', [TableController::class, 'destroy']);
+    Route::get('/admin/tables/with-reservations', [TableController::class, 'getWithReservations']);
+    Route::get('/admin/tables', [TableController::class, 'index']);
+    Route::put('/admin/tables/{id}/status', [TableController::class, 'updateStatus']);
+    
+    // Reservations
+    Route::get('/admin/reservations', [ReservationController::class, 'adminIndex']);
+    Route::put('/admin/reservations/{id}/status', [ReservationController::class, 'updateStatus']);
+    Route::put('/admin/reservations/{id}/arrive', function($id) {
+        DB::table('reservations')->where('id', $id)->update(['status' => 'checked_in']);
+        return response()->json(['status' => 200]);
+    });
+    Route::put('/admin/reservations/{id}/complete', function($id) {
+        DB::table('reservations')->where('id', $id)->update(['status' => 'completed']);
+        return response()->json(['status' => 200]);
+    });
+    
+    // Users & Analytics (Mocks)
+    Route::get('/admin/users', function() {
+        return response()->json(['status' => 200, 'data' => DB::table('users')->get()]);
+    });
+    Route::post('/admin/users', function(\Illuminate\Http\Request $request) {
+        return response()->json(['status' => 201]);
+    });
+    Route::put('/admin/users/{id}', function(\Illuminate\Http\Request $request, $id) {
+        return response()->json(['status' => 200]);
+    });
+    Route::delete('/admin/users/{id}', function($id) {
+        return response()->json(['status' => 200]);
+    });
+    Route::get('/admin/analytics', function() {
+        return response()->json(['status' => 200, 'data' => [
+            'revenue' => DB::table('orders')->sum('total_amount') ?? 0,
+            'orders' => DB::table('orders')->count(),
+            'reservations' => DB::table('reservations')->count()
+        ]]);
+    });
 });
-Route::post('/admin/users', function(\Illuminate\Http\Request $request) {
-    return response()->json(['status' => 201]);
-});
-Route::put('/admin/users/{id}', function(\Illuminate\Http\Request $request, $id) {
-    return response()->json(['status' => 200]);
-});
-Route::delete('/admin/users/{id}', function($id) {
-    return response()->json(['status' => 200]);
-});
-Route::get('/admin/analytics', function() {
-    return response()->json(['status' => 200, 'data' => [
-        'revenue' => DB::table('orders')->sum('total_amount') ?? 0,
-        'orders' => DB::table('orders')->count(),
-        'reservations' => DB::table('reservations')->count()
-    ]]);
-});
-Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
 
 // --- PONYTAIL: CORS IMAGE PROXY ---
 // Serve images with CORS headers to satisfy CanvasKit renderer without needing --web-renderer html

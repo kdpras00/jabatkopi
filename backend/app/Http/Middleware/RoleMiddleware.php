@@ -16,11 +16,16 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         if (!auth()->check()) {
-            return redirect()->route('login');
+            return $request->expectsJson() 
+                ? response()->json(['message' => 'Unauthenticated.'], 401) 
+                : redirect()->route('login');
         }
 
         $user = auth()->user();
         if (!in_array($user->role, $roles)) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
             if ($user->role === 'admin') {
                 return redirect()->route('admin.dashboard');
             } elseif ($user->role === 'pegawai') {

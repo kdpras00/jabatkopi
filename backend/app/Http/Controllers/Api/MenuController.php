@@ -36,7 +36,12 @@ class MenuController extends Controller
         if ($request->has('image_base64') && !empty($request->image_base64)) {
             $imageParts = explode(";base64,", $request->image_base64);
             $imageTypeAux = explode("image/", $imageParts[0]);
-            $imageType = count($imageTypeAux) > 1 ? $imageTypeAux[1] : 'jpeg';
+            $imageType = count($imageTypeAux) > 1 ? $imageTypeAux[1] : null;
+            
+            if (!in_array($imageType, ['jpeg', 'jpg', 'png'])) {
+                return response()->json(['message' => 'Tipe gambar tidak valid. Hanya menerima format JPG, JPEG, dan PNG.'], 400);
+            }
+            
             $imageBase64 = base64_decode(count($imageParts) > 1 ? $imageParts[1] : $imageParts[0]);
             
             $fileName = Str::uuid() . '.' . $imageType;
@@ -81,7 +86,12 @@ class MenuController extends Controller
         if ($request->has('image_base64') && !empty($request->image_base64)) {
             $imageParts = explode(";base64,", $request->image_base64);
             $imageTypeAux = explode("image/", $imageParts[0]);
-            $imageType = count($imageTypeAux) > 1 ? $imageTypeAux[1] : 'jpeg';
+            $imageType = count($imageTypeAux) > 1 ? $imageTypeAux[1] : null;
+            
+            if (!in_array($imageType, ['jpeg', 'jpg', 'png'])) {
+                return response()->json(['message' => 'Tipe gambar tidak valid. Hanya menerima format JPG, JPEG, dan PNG.'], 400);
+            }
+            
             $imageBase64 = base64_decode(count($imageParts) > 1 ? $imageParts[1] : $imageParts[0]);
             
             $fileName = Str::uuid() . '.' . $imageType;

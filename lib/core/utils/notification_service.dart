@@ -115,16 +115,13 @@ class NotificationService {
     try {
       const storage = flutter_secure_storage.FlutterSecureStorage();
       final token = await storage.read(key: 'jwt_token');
-      final userId = await storage.read(key: 'user_id');
-      
-      if (token == null || userId == null) return;
+      if (token == null) return;
 
       await http.put(
         Uri.parse('${AppConfig.laravelBaseUrl}/api/profile/fcm-token'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
-          'X-User-Id': userId,
         },
         body: jsonEncode({
           'fcm_token': fcmToken,

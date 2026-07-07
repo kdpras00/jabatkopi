@@ -82,12 +82,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       _buzzerActive = true;
     });
 
-    HapticFeedback.vibrate();
-    jsh.playWebBeep();
+    // ponytail: deferred buzzer/pager alarm
+    // HapticFeedback.vibrate();
+    // jsh.playWebBeep();
 
     _buzzerTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
-      HapticFeedback.vibrate();
-      jsh.playWebBeep();
+      // HapticFeedback.vibrate();
+      // jsh.playWebBeep();
     });
   }
 
@@ -101,7 +102,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Future<void> _checkAndRequestBuzzerPermission() async {
-    if (_hasSeenPagerPrompt || _buzzerSilenced) return;
+    // ponytail: deferred pager prompt
+    return;
+    // if (_hasSeenPagerPrompt || _buzzerSilenced) return;
     
     // UX: let user see the order status first, then show the prompt
     await Future.delayed(const Duration(milliseconds: 1500));
@@ -176,7 +179,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       onPressed: () {
                         // FIX: unlock AudioContext immediately inside user gesture,
                         // before any await that would expire the activation context
-                        jsh.playWebBeep();
+                        // jsh.playWebBeep();
                         Navigator.pop(context, true);
                       },
                       child: const Text(
@@ -240,7 +243,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
           TextButton(
             onPressed: () {
-              jsh.playWebBeep(); // unlock audio in gesture context
+              // jsh.playWebBeep(); // unlock audio in gesture context
               Navigator.pop(context, true);
             },
             child: const Text('Aktifkan', style: TextStyle(color: AppColors.caramelGold, fontWeight: FontWeight.bold)),
@@ -348,7 +351,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     final isCancelled = _order?.status == 'cancelled';
-    final isReady = _order?.status == 'ready' && !_buzzerSilenced;
+    // ponytail: deferred pager UI
+    // final isReady = _order?.status == 'ready' && !_buzzerSilenced;
+    final isReady = false;
 
     return Scaffold(
       backgroundColor: AppColors.charcoal,
@@ -358,12 +363,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         backgroundColor: AppColors.darkGrey,
         actions: [
           // Bell icon: let user re-enable pager if they skipped it earlier
-          if (!_buzzerAllowed && _hasSeenPagerPrompt && !isCancelled)
-            IconButton(
-              icon: const Icon(Icons.notifications_off_outlined, color: Colors.white38, size: 20),
-              tooltip: 'Aktifkan Pager Antrean',
-              onPressed: _promptReEnableBuzzer,
-            ),
+          // ponytail: deferred bell icon
+          // if (!_buzzerAllowed && _hasSeenPagerPrompt && !isCancelled)
+          //   IconButton(
+          //     icon: const Icon(Icons.notifications_off_outlined, color: Colors.white38, size: 20),
+          //     tooltip: 'Aktifkan Pager Antrean',
+          //     onPressed: _promptReEnableBuzzer,
+          //   ),
           if (_order?.status == 'pending')
             Padding(
               padding: const EdgeInsets.only(right: 8.0),

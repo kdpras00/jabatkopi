@@ -35,14 +35,15 @@ class _LoginScreenState extends State<LoginScreen> {
         _passwordController.text,
       );
       if (success && mounted) {
-        try {
-          final token = await FirebaseMessaging.instance.getToken();
-          if (token != null) {
-            await NotificationService().syncTokenToBackend(token);
-          }
-        } catch (e) {
-          debugPrint("Failed to sync token on login: $e");
-        }
+        // ponytail: deferred FCM token sync on login
+        // try {
+        //   final token = await FirebaseMessaging.instance.getToken();
+        //   if (token != null) {
+        //     await NotificationService().syncTokenToBackend(token);
+        //   }
+        // } catch (e) {
+        //   debugPrint("Failed to sync token on login: $e");
+        // }
         
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(

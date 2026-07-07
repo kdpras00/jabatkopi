@@ -15,12 +15,12 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = DB::table('users')->where('email', $request->email)->first();
+        $user = \App\Models\User::where('email', $request->email)->first();
         if (!$user) return response()->json(['message' => 'Email tidak ditemukan'], 404);
         if (!Hash::check($request->password, $user->password_hash)) {
             return response()->json(['message' => 'Email atau password salah'], 401);
         }
-        $token = 'session_' . $user->id . '_' . time();
+        $token = $user->createToken('auth_token')->plainTextToken;
         return response()->json([
             'status' => 200,
             'message' => 'Berhasil masuk!',
@@ -58,7 +58,8 @@ class AuthController extends Controller
 
     public function profile(Request $request)
     {
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
+        if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
         $user = DB::table('users')->where('id', $customerId)->first();
         return response()->json([
             'status' => 200,
@@ -80,7 +81,8 @@ class AuthController extends Controller
             'email' => 'required|email',
         ]);
 
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
+        if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
         DB::table('users')->where('id', $customerId)->update([
             'name' => $request->name,
             'username' => $request->username,
@@ -93,7 +95,8 @@ class AuthController extends Controller
 
     public function updatePassword(Request $request)
     {
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
+        if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
         $user = DB::table('users')->where('id', $customerId)->first();
 
         if (!Hash::check($request->old_password, $user->password_hash)) {
@@ -113,9 +116,9 @@ class AuthController extends Controller
             'fcm_token' => 'required|string',
         ]);
 
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
         if (!$customerId) {
-            return response()->json(['message' => 'User ID is missing'], 401);
+            return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         DB::table('users')->where('id', $customerId)->update([

@@ -9,7 +9,7 @@ class ReservationController extends Controller
 {
     public function index(Request $request)
     {
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
         $reservations = DB::table('reservations')
             ->select('reservations.*', 'tables.id as table_number', 'tables.capacity as table_capacity', 'users.name as user_name', 'users.email as user_email')
             ->leftJoin('tables', 'reservations.table_id', '=', 'tables.id')
@@ -37,7 +37,7 @@ class ReservationController extends Controller
             'guest_count' => 'required|integer|min:1',
         ]);
 
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
         if (!$customerId) return response()->json(['message' => 'Sesi tidak valid'], 401);
 
         $tableId = $request->table_id;
@@ -148,7 +148,7 @@ class ReservationController extends Controller
 
     public function active(Request $request)
     {
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
         if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
         $reservations = DB::table('reservations')
             ->where('customer_id', $customerId)

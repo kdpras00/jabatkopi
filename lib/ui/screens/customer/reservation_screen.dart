@@ -39,8 +39,9 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
   }
 
   Future<void> _initNotifications() async {
-    await NotificationService().initialize();
-    await NotificationService().requestPermission();
+    // ponytail: deferred notification service init
+    // await NotificationService().initialize();
+    // await NotificationService().requestPermission();
   }
 
   void _submitReservation() async {
@@ -60,7 +61,6 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
         dateStr,
         _selectedTime!,
         _guestCount,
-        0, // will be overwritten by JWT in backend
         0, // Pass 0 to auto-allocate
       );
 
@@ -68,13 +68,13 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
       final qrCode = resData['barcode'] ?? resData['qr_code'] ?? bookingId;
       final assignedTableId = resData['table_id'] as int? ?? 0;
 
-      // Tampilkan notifikasi Android/iOS
-      await NotificationService().showReservationNotification(
-        bookingId,
-        '$dateStr $_selectedTime',
-        assignedTableId,
-        _guestCount,
-      );
+      // ponytail: deferred showReservationNotification
+      // await NotificationService().showReservationNotification(
+      //   bookingId,
+      //   '$dateStr $_selectedTime',
+      //   assignedTableId,
+      //   _guestCount,
+      // );
 
       if (mounted) {
         Navigator.push(

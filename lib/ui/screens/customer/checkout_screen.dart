@@ -123,8 +123,6 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       final repo = OrderRepository(apiClient: ApiClient());
       final orderData = await repo.createOrder(
         widget.tableId,
-        1, // Customer ID (will be overwritten by JWT in backend OrderHandler)
-        widget.totalAmount,
         _selectedMethod!,
         widget.items,
       );

@@ -6,12 +6,10 @@ class OrderRepository {
 
   OrderRepository({required this.apiClient});
 
-  Future<Map<String, dynamic>> createOrder(int tableId, int customerId, double totalAmount, String paymentMethod, List<Map<String, dynamic>> items) async {
+  Future<Map<String, dynamic>> createOrder(int tableId, String paymentMethod, List<Map<String, dynamic>> items) async {
     try {
       final response = await apiClient.post('/orders', {
         'table_id': tableId,
-        'customer_id': customerId,
-        'total_amount': totalAmount,
         'payment_method': paymentMethod,
         'items': items,
       });

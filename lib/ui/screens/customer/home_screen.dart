@@ -148,12 +148,13 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       _buzzerActive = true;
     });
 
-    HapticFeedback.vibrate();
-    jsh.playWebBeep();
+    // ponytail: deferred buzzer/pager alarm
+    // HapticFeedback.vibrate();
+    // jsh.playWebBeep();
 
-    _buzzerTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
-      HapticFeedback.vibrate();
-      jsh.playWebBeep();
+    _buzzerTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
+      // HapticFeedback.vibrate();
+      // jsh.playWebBeep();
     });
   }
 

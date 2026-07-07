@@ -36,11 +36,6 @@ class ApiClient {
       request.headers['Authorization'] = 'Bearer $token';
     }
     
-    // Legacy support for X-User-Id just in case some backend parts still rely on it
-    final userId = await secureStorage.read(key: 'user_id');
-    if (userId != null) {
-      request.headers['X-User-Id'] = userId;
-    }
 
     if (body != null) {
       request.body = jsonEncode(body);

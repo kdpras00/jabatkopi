@@ -12,33 +12,42 @@ class OrderController extends Controller
     {
         $request->validate([
             'table_id' => 'required|integer',
-            'total_amount' => 'required|numeric|min:0',
             'payment_method' => 'required|string',
             'items' => 'required|array|min:1',
             'items.*.menu_id' => 'required|integer',
             'items.*.qty' => 'required|integer|min:1',
-            'items.*.subtotal' => 'required|numeric|min:0',
         ]);
 
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
         if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
 
         try {
             $tableId = $request->table_id;
-            $totalAmount = $request->total_amount;
             $paymentMethod = $request->payment_method;
             $items = $request->items;
 
-            // Cek stok sebelum memotong apa pun
+            $totalAmount = 0;
+            $processedItems = [];
+
+            // Cek stok dan hitung subtotal & total
             foreach ($items as $item) {
                 $menu = DB::table('menus')->where('id', $item['menu_id'])->first();
                 if (!$menu || $menu->stock < $item['qty']) {
                     throw new \Exception('Stok tidak cukup atau menu tidak ditemukan: ' . ($menu->name ?? 'Unknown'));
                 }
+                
+                $subtotal = $menu->price * $item['qty'];
+                $totalAmount += $subtotal;
+                
+                $processedItems[] = [
+                    'menu_id' => $item['menu_id'],
+                    'qty' => $item['qty'],
+                    'subtotal' => $subtotal,
+                ];
             }
 
             // Potong stok
-            foreach ($items as $item) {
+            foreach ($processedItems as $item) {
                 DB::table('menus')->where('id', $item['menu_id'])->decrement('stock', $item['qty']);
             }
 
@@ -55,7 +64,7 @@ class OrderController extends Controller
                 'updated_at' => now(),
             ]);
 
-            foreach ($items as $item) {
+            foreach ($processedItems as $item) {
                 DB::table('order_items')->insert([
                     'order_id' => $orderId,
                     'menu_id' => $item['menu_id'],
@@ -75,7 +84,7 @@ class OrderController extends Controller
             if ($request->payment_method !== 'cash') {
                 $authString = base64_encode(env('MIDTRANS_SERVER_KEY') . ':');
                 $orderIdString = 'JK-ORDER-' . $result;
-                $grossAmount = (int)$request->total_amount;
+                $grossAmount = (int)$totalAmount;
 
                 $payload = [
                     'transaction_details' => [
@@ -199,7 +208,7 @@ class OrderController extends Controller
     }
     public function history(Request $request)
     {
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
         if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
 
         $orders = DB::table('orders')
@@ -231,7 +240,7 @@ class OrderController extends Controller
 
     public function active(Request $request)
     {
-        $customerId = $request->header('X-User-Id');
+        $customerId = auth()->id();
         if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
         $orders = DB::table('orders')->where('customer_id', $customerId)->whereIn('status', ['pending', 'processing', 'ready'])->get();
         return response()->json(['status' => 200, 'data' => $orders]);
