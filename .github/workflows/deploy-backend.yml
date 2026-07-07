@@ -47,6 +47,7 @@ jobs:
           tar -czf - \
             --exclude='backend/.env' \
             --exclude='backend/vendor' \
+            --exclude='backend/.git' \
             --exclude='backend/node_modules' \
             --exclude='backend/storage/app/public' \
             --exclude='backend/tests' \
