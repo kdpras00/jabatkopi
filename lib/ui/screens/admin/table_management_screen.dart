@@ -60,6 +60,8 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
   }
 
   void _showAddTableBottomSheet() {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final int nextNumber = _tables.length + 1;
     final qrController = TextEditingController(text: 'JK-TABLE-$nextNumber');
     bool isSubmitting = false;
@@ -67,6 +69,7 @@ class _TableManagementScreenState extends State<TableManagementScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(

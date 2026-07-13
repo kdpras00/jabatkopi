@@ -63,6 +63,8 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
   }
 
   void _showAddEditBottomSheet([MenuModel? menu]) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final nameController = TextEditingController(text: menu?.name);
     final priceController = TextEditingController(text: menu?.price.toString());
     final stockController = TextEditingController(text: menu?.stock.toString() ?? '50');
@@ -75,6 +77,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(

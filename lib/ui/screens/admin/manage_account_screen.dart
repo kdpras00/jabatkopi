@@ -61,6 +61,8 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
   }
 
   void _showAddEditUserBottomSheet([dynamic user]) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final nameController = TextEditingController(text: user?['name']);
     final usernameController = TextEditingController(text: user?['username']);
     final emailController = TextEditingController(text: user?['email']);
@@ -70,6 +72,7 @@ class _ManageAccountScreenState extends State<ManageAccountScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
