@@ -12,9 +12,10 @@ class MenuController extends Controller
     public function index()
     {
         $menus = DB::table('menus')->whereNull('deleted_at')->orderBy('name')->get();
-        // ponytail: dynamically replace absolute URLs to use our custom CORS image proxy
+        // Rewrite image URL ke server yang sedang aktif (local atau production)
+        // sehingga tidak ada cross-origin redirect antar environment
         foreach ($menus as $menu) {
-            if ($menu->image_url && str_contains($menu->image_url, '/storage/menus/')) {
+            if ($menu->image_url) {
                 $filename = basename(parse_url($menu->image_url, PHP_URL_PATH));
                 $menu->image_url = url('/api/images/menus/' . $filename);
             }
