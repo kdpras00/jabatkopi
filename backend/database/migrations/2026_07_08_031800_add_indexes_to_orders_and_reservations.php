@@ -7,51 +7,46 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         // 1. Optimasi tabel orders
         Schema::table('orders', function (Blueprint $table) {
-            // Kita cek dulu jika index belum ada, baru kita buat agar aman dari error
-            $schemaManager = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexes = $schemaManager->listTableIndexes('orders');
+            $existing = collect(DB::select("
+                SELECT indexname FROM pg_indexes WHERE tablename = 'orders'
+            "))->pluck('indexname');
 
-            if (!array_key_exists('orders_customer_id_index', $indexes)) {
+            if (!$existing->contains('orders_customer_id_index')) {
                 $table->index('customer_id');
             }
-            if (!array_key_exists('orders_table_id_index', $indexes)) {
+            if (!$existing->contains('orders_table_id_index')) {
                 $table->index('table_id');
             }
-            if (!array_key_exists('orders_status_index', $indexes)) {
+            if (!$existing->contains('orders_status_index')) {
                 $table->index('status');
             }
         });
 
         // 2. Optimasi tabel reservations
         Schema::table('reservations', function (Blueprint $table) {
-            $schemaManager = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexes = $schemaManager->listTableIndexes('reservations');
+            $existing = collect(DB::select("
+                SELECT indexname FROM pg_indexes WHERE tablename = 'reservations'
+            "))->pluck('indexname');
 
-            if (!array_key_exists('reservations_customer_id_index', $indexes)) {
+            if (!$existing->contains('reservations_customer_id_index')) {
                 $table->index('customer_id');
             }
-            if (!array_key_exists('reservations_table_id_index', $indexes)) {
+            if (!$existing->contains('reservations_table_id_index')) {
                 $table->index('table_id');
             }
-            if (!array_key_exists('reservations_status_index', $indexes)) {
+            if (!$existing->contains('reservations_status_index')) {
                 $table->index('status');
             }
-            if (!array_key_exists('reservations_reservation_date_index', $indexes)) {
+            if (!$existing->contains('reservations_reservation_date_index')) {
                 $table->index('reservation_date');
             }
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
