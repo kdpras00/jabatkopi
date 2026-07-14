@@ -101,9 +101,19 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 Route::get('/images/menus/{filename}', function($filename) {
     $path = storage_path('app/public/menus/' . $filename);
     if (!file_exists($path)) {
-        // If running locally, fall back to production images so local admin matches production files
+        // Proxy dari production supaya tidak ada cross-origin redirect
         if (config('app.env') === 'local') {
-            return redirect('https://jabatkopi.my.id/api/images/menus/' . $filename);
+            $url = 'https://jabatkopi.my.id/storage/menus/' . $filename;
+            $imageData = @file_get_contents($url);
+            if ($imageData !== false) {
+                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                $mime = in_array($ext, ['png']) ? 'image/png' : 'image/jpeg';
+                return response($imageData, 200, [
+                    'Content-Type' => $mime,
+                    'Access-Control-Allow-Origin' => '*',
+                    'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+                ]);
+            }
         }
 
         $pixel = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
