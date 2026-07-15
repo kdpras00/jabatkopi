@@ -184,12 +184,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {},
-          ),
-        ],
+
       ),
       body: Column(
         children: [
@@ -339,10 +334,9 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
           // Bottom Summary
           JkGlassCard(
             borderRadius: 0,
-            padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 20),
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 20),
             child: SafeArea(
               top: false,
-              bottom: false,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

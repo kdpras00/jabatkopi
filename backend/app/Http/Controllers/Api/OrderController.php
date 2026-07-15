@@ -91,7 +91,7 @@ class OrderController extends Controller
             
             if ($request->payment_method !== 'cash') {
                 $authString = base64_encode(env('MIDTRANS_SERVER_KEY') . ':');
-                $orderIdString = 'JK-ORDER-' . $result . '-' . time();
+                $orderIdString = 'JK-ORDER-' . $result;
                 $grossAmount = (int)$totalAmount;
 
                 $payload = [
@@ -297,10 +297,12 @@ class OrderController extends Controller
         if ($order->status === 'pending' || $order->payment_method === 'BANK TRANSFER' || $order->payment_method === 'bank_transfer') {
             try {
                 $authString = base64_encode(env('MIDTRANS_SERVER_KEY') . ':');
+                $isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+                $midtransApiUrl = $isProduction ? 'https://api.midtrans.com/v2/' : 'https://api.sandbox.midtrans.com/v2/';
                 $response = Http::withHeaders([
                     'Authorization' => 'Basic ' . $authString,
                     'Accept' => 'application/json',
-                ])->get('https://api.sandbox.midtrans.com/v2/JK-ORDER-' . $id . '/status');
+                ])->get($midtransApiUrl . 'JK-ORDER-' . $id . '/status');
 
                 if ($response->successful()) {
                     $resData = $response->json();

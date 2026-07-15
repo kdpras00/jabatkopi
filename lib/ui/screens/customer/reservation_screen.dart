@@ -67,7 +67,7 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
       final assignedTableId = resData['table_id'] != null ? int.tryParse(resData['table_id'].toString()) ?? 0 : 0;
 
       if (mounted) {
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => ReservationSummaryScreen(

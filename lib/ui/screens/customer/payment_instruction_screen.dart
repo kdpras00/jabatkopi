@@ -7,6 +7,7 @@ import '../../../data/repositories/order_repository.dart';
 import '../../widgets/jk_glass_card.dart';
 import '../../widgets/jk_primary_button.dart';
 import 'digital_receipt_screen.dart';
+import 'order_tracking_screen.dart';
 
 class PaymentInstructionScreen extends StatefulWidget {
   final int orderId;
@@ -219,11 +220,29 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
     final qrUrl = _currentDetails['qr_url'] as String?;
     final deeplinkUrl = _currentDetails['deeplink_url'] as String?;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Instruksi Pembayaran', style: TextStyle(fontWeight: FontWeight.bold)),
-        automaticallyImplyLeading: false,
-      ),
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderId: widget.orderId)),
+          (route) => route.isFirst,
+        );
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Instruksi Pembayaran', style: TextStyle(fontWeight: FontWeight.bold)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderId: widget.orderId)),
+                (route) => route.isFirst,
+              );
+            },
+          ),
+        ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -572,6 +591,6 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 }

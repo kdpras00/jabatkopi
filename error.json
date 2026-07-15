@@ -1,0 +1,356 @@
+{
+    "message": "SQLSTATE[HY000] [2002] Connection refused (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: jabatkopi, SQL: select * from `users` where `email` = test@test.com limit 1)",
+    "exception": "Illuminate\\Database\\QueryException",
+    "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+    "line": 841,
+    "trace": [
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+            "line": 1021,
+            "function": "runQueryCallback",
+            "class": "Illuminate\\Database\\Connection",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+            "line": 1000,
+            "function": "tryAgainIfCausedByLostConnection",
+            "class": "Illuminate\\Database\\Connection",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+            "line": 799,
+            "function": "handleQueryException",
+            "class": "Illuminate\\Database\\Connection",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+            "line": 412,
+            "function": "run",
+            "class": "Illuminate\\Database\\Connection",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php",
+            "line": 3567,
+            "function": "select",
+            "class": "Illuminate\\Database\\Connection",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Query/Builder.php",
+            "line": 3551,
+            "function": "runSelect",
+            "class": "Illuminate\\Database\\Query\\Builder",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php",
+            "line": 908,
+            "function": "get",
+            "class": "Illuminate\\Database\\Query\\Builder",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Eloquent/Builder.php",
+            "line": 890,
+            "function": "getModels",
+            "class": "Illuminate\\Database\\Eloquent\\Builder",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Database/Concerns/BuildsQueries.php",
+            "line": 366,
+            "function": "get",
+            "class": "Illuminate\\Database\\Eloquent\\Builder",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/app/Http/Controllers/Api/AuthController.php",
+            "line": 18,
+            "function": "first",
+            "class": "Illuminate\\Database\\Eloquent\\Builder",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Routing/ControllerDispatcher.php",
+            "line": 46,
+            "function": "login",
+            "class": "App\\Http\\Controllers\\Api\\AuthController",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php",
+            "line": 269,
+            "function": "dispatch",
+            "class": "Illuminate\\Routing\\ControllerDispatcher",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Routing/Route.php",
+            "line": 215,
+            "function": "runController",
+            "class": "Illuminate\\Routing\\Route",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+            "line": 822,
+            "function": "run",
+            "class": "Illuminate\\Routing\\Route",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 180,
+            "function": "{closure:Illuminate\\Routing\\Router::runRouteWithinStack():821}",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php",
+            "line": 52,
+            "function": "{closure:Illuminate\\Pipeline\\Pipeline::prepareDestination():178}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 137,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+            "line": 821,
+            "function": "then",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+            "line": 800,
+            "function": "runRouteWithinStack",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+            "line": 764,
+            "function": "runRoute",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php",
+            "line": 753,
+            "function": "dispatchToRoute",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php",
+            "line": 200,
+            "function": "dispatch",
+            "class": "Illuminate\\Routing\\Router",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 180,
+            "function": "{closure:Illuminate\\Foundation\\Http\\Kernel::dispatchToRouter():197}",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/livewire/livewire/src/Features/SupportDisablingBackButtonCache/DisableBackButtonCacheMiddleware.php",
+            "line": 19,
+            "function": "{closure:Illuminate\\Pipeline\\Pipeline::prepareDestination():178}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Livewire\\Features\\SupportDisablingBackButtonCache\\DisableBackButtonCacheMiddleware",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php",
+            "line": 21,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php",
+            "line": 31,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php",
+            "line": 21,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php",
+            "line": 51,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\TrimStrings",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php",
+            "line": 27,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\ValidatePostSize",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php",
+            "line": 109,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php",
+            "line": 58,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\TrustProxies",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php",
+            "line": 22,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePathEncoding.php",
+            "line": 28,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\ValidatePathEncoding",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php",
+            "line": 74,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 219,
+            "function": "handle",
+            "class": "Illuminate\\Http\\Middleware\\HandleCors",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php",
+            "line": 137,
+            "function": "{closure:{closure:Illuminate\\Pipeline\\Pipeline::carry():194}:195}",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php",
+            "line": 175,
+            "function": "then",
+            "class": "Illuminate\\Pipeline\\Pipeline",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php",
+            "line": 144,
+            "function": "sendRequestThroughRouter",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php",
+            "line": 1220,
+            "function": "handle",
+            "class": "Illuminate\\Foundation\\Http\\Kernel",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/public/index.php",
+            "line": 20,
+            "function": "handleRequest",
+            "class": "Illuminate\\Foundation\\Application",
+            "type": "->"
+        },
+        {
+            "file": "/Volumes/Untitled/project_laravel/jabatkopi/backend/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php",
+            "line": 23,
+            "function": "require_once"
+        }
+    ]
+}

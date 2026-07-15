@@ -7,8 +7,15 @@ import '../../widgets/jk_glass_card.dart';
 import '../../widgets/jk_primary_button.dart';
 import 'checkout_screen.dart';
 
-class CustomerCartScreen extends StatelessWidget {
+class CustomerCartScreen extends StatefulWidget {
   const CustomerCartScreen({super.key});
+
+  @override
+  State<CustomerCartScreen> createState() => _CustomerCartScreenState();
+}
+
+class _CustomerCartScreenState extends State<CustomerCartScreen> {
+  bool _isLoading = false;
 
   /// Cek reservasi aktif customer hari ini (status checked_in saja)
   Future<Map<String, dynamic>?> _getCheckedInReservation() async {
@@ -170,7 +177,9 @@ class CustomerCartScreen extends StatelessWidget {
                     const SizedBox(height: 24),
                     JkPrimaryButton(
                       label: 'LANJUT CHECKOUT',
-                      onPressed: () async {
+                      isLoading: _isLoading,
+                      onPressed: _isLoading ? null : () async {
+                        if (mounted) setState(() => _isLoading = true);
                         try {
                           final items = cartProvider.items.map((item) => {
                             'menu_id': item.menu.id,
@@ -181,11 +190,8 @@ class CustomerCartScreen extends StatelessWidget {
                           int? currentTableId = cartProvider.tableId;
 
                           if (currentTableId == null) {
-                            // 1. Cek apakah customer sudah check-in reservasi hari ini
                             final checkedInRes = await _getCheckedInReservation();
-
                             if (checkedInRes != null) {
-                              // Sudah check-in → pakai meja dari reservasi secara otomatis
                               final tId = checkedInRes['table_id'] as int;
                               currentTableId = tId;
                               cartProvider.setTableId(tId);
@@ -225,10 +231,15 @@ class CustomerCartScreen extends StatelessWidget {
                               SnackBar(content: Text(msg), backgroundColor: Colors.red),
                             );
                           }
+                        } finally {
+                          if (mounted) setState(() => _isLoading = false);
                         }
                       },
                     ),
-                    SizedBox(height: MediaQuery.of(context).padding.bottom),
+                    SafeArea(
+                      top: false,
+                      child: const SizedBox(height: 16),
+                    ),
                   ],
                 ),
               ),
