@@ -358,7 +358,7 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
                 )
               : RefreshIndicator(
                   onRefresh: _fetchHistory,
-                  color: AppColors.accentBlue,
+                  color: Colors.blue,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: _orders.length,
