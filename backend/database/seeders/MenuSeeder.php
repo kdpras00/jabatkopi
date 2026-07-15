@@ -12,6 +12,7 @@ class MenuSeeder extends Seeder
      */
     public function run(): void
     {
+        $menus = [
             ['name' => 'Nasi goreng', 'category' => 'Food & Snack', 'price' => 35000, 'image_url' => 'default-menu.png', 'is_available' => true, 'stock' => 100],
             ['name' => 'Cireng Sambal Rujak', 'category' => 'food', 'price' => 20000, 'image_url' => 'default-menu.png', 'is_available' => true, 'stock' => 100],
             ['name' => 'Jabat Fries', 'category' => 'Food & Snack', 'price' => 20000, 'image_url' => 'default-menu.png', 'is_available' => true, 'stock' => 100],
