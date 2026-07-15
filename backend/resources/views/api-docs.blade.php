@@ -67,13 +67,6 @@
             text-decoration: none;
         }
 
-        .sidebar-header .logo span {
-            display: inline-block;
-            width: 8px; height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-        }
-
         .sidebar-header .version {
             margin-top: 4px;
             font-size: 11px;
@@ -328,10 +321,8 @@
 <aside id="sidebar">
     <div class="sidebar-header">
         <a class="logo" href="/api-docs">
-            <span></span>
             Jabat Kopi API
         </a>
-        <div class="version">v1.0 · Sandbox</div>
     </div>
 
     <nav id="sidenav">
@@ -342,7 +333,6 @@
 <div id="main">
     <div id="topbar">
         <span class="base-url">https://jabatkopi.my.id/api</span>
-        <span class="status-dot">Sandbox aktif</span>
     </div>
 
     <div id="loading">Memuat dokumentasi…</div>
