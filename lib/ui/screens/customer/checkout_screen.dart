@@ -152,17 +152,13 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String userFriendlyError = 'Gagal memproses pesanan Anda. Silakan coba beberapa saat lagi.';
+        // DEBUG: Tampilkan error asli untuk troubleshooting
         final errStr = e.toString();
-        if (errStr.contains('tidak mencukupi') || errStr.contains('stok') || errStr.contains('Stok')) {
-          userFriendlyError = errStr.replaceAll('Exception: ', '').replaceAll('Exception', '');
-        } else if (errStr.contains('SocketException') || errStr.contains('ClientException') || errStr.contains('XMLHttpRequest')) {
-          userFriendlyError = 'Koneksi internet bermasalah. Silakan periksa kembali jaringan Anda dan coba lagi.';
-        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(userFriendlyError),
+            content: Text('ERROR: $errStr'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 10),
           ),
         );
       }
