@@ -88,12 +88,10 @@
         .nav-label {
             display: block;
             padding: 0 20px;
-            margin: 16px 0 4px;
-            font-size: 10px;
+            margin: 24px 0 8px;
+            font-size: 13px;
             font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--ink-muted);
+            color: var(--ink);
         }
 
         .nav-link {
@@ -374,10 +372,21 @@
             const headings = [...el.querySelectorAll('h1, h2, h3')];
 
             headings.forEach(h => {
-                const id = h.id;
+                let id = h.id;
+                
+                // marked.js v4+ doesn't generate IDs by default. We polyfill it here.
+                if (!id) {
+                    id = h.textContent
+                        .toLowerCase()
+                        .replace(/[^\w\s-]/g, '')
+                        .trim()
+                        .replace(/\s+/g, '-');
+                    h.id = id;
+                }
+
                 const text = h.textContent
-                    // Strip leading emoji + numbers like "🔐 1. " → "Authentication"
-                    .replace(/^[\p{Emoji}\s\d.]+/u, '')
+                    // Clean leading emojis and numbers (e.g. "🔐 1. Authentication" -> "Authentication")
+                    .replace(/^[^a-zA-Z]+/, '')
                     .trim();
 
                 if (!id || !text) return;
