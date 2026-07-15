@@ -2,6 +2,22 @@
 
 use Illuminate\Support\Facades\Route;
 
+// --- API Documentation ---
+Route::get('/api-docs', function () {
+    return view('api-docs');
+});
+
+Route::get('/api-docs-raw', function () {
+    $path = base_path('api-docs.md');
+    if (!file_exists($path)) {
+        abort(404, 'api-docs.md not found');
+    }
+    return response(file_get_contents($path), 200, [
+        'Content-Type' => 'text/plain; charset=UTF-8',
+    ]);
+});
+
+
 Route::redirect('/', '/login');
 
 Route::livewire('/login', 'pages::auth.login')
