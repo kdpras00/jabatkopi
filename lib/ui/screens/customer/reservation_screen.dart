@@ -64,7 +64,7 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
 
       final bookingId = resData['booking_id'] ?? 'JK-RES-${resData['id'] ?? resData['reservation_id']}';
       final qrCode = resData['barcode'] ?? resData['qr_code'] ?? bookingId;
-      final assignedTableId = resData['table_id'] as int? ?? 0;
+      final assignedTableId = resData['table_id'] != null ? int.tryParse(resData['table_id'].toString()) ?? 0 : 0;
 
       if (mounted) {
         Navigator.push(

@@ -153,11 +153,15 @@ class OrderController extends Controller
                         break;
                 }
 
+                $serverKey = env('MIDTRANS_SERVER_KEY', '');
+                $isProduction = !str_starts_with($serverKey, 'SB-');
+                $midtransApiUrl = $isProduction ? 'https://api.midtrans.com/v2/charge' : 'https://api.sandbox.midtrans.com/v2/charge';
+
                 $response = Http::withHeaders([
                     'Authorization' => 'Basic ' . $authString,
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
-                ])->post('https://api.sandbox.midtrans.com/v2/charge', $payload);
+                ])->post($midtransApiUrl, $payload);
 
                 if ($response->successful()) {
                     $resData = $response->json();
