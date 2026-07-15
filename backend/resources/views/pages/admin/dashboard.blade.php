@@ -6,6 +6,8 @@ use Livewire\WithFileUploads;
 use App\Models\User;
 use App\Models\Table;
 use App\Models\Menu;
+use App\Models\Order;
+use Carbon\Carbon;
 
 new class extends Component
 {
@@ -13,6 +15,7 @@ new class extends Component
 
     #[Url(as: 'tab')]
     public string $activeTab = 'overview';
+    public string $dateFilter = 'today';
 
     public bool $showForm = false;
 
@@ -260,6 +263,20 @@ new class extends Component
         $tables = Table::all();
         $menus = Menu::all();
 
+        // Calculate Revenue based on filter
+        $query = Order::whereIn('status', ['completed', 'processing']);
+        
+        if ($this->dateFilter === 'today') {
+            $query->whereDate('created_at', Carbon::today());
+        } elseif ($this->dateFilter === 'week') {
+            $query->where('created_at', '>=', Carbon::now()->subDays(7));
+        } elseif ($this->dateFilter === 'month') {
+            $query->whereMonth('created_at', Carbon::now()->month)
+                  ->whereYear('created_at', Carbon::now()->year);
+        }
+
+        $totalRevenue = $query->sum('total_amount');
+
         return view('pages.admin.dashboard', [
             'staff' => $staff,
             'totalUsers' => $totalUsers,
@@ -267,6 +284,7 @@ new class extends Component
             'totalPegawai' => $totalPegawai,
             'tables' => $tables,
             'menus' => $menus,
+            'totalRevenue' => $totalRevenue,
         ]);
     }
 };
@@ -275,9 +293,19 @@ new class extends Component
     <!-- OVERVIEW TAB -->
     @if($activeTab === 'overview')
         <div>
-            <div class="mb-8">
-                <h1 class="text-3.5xl text-coffee-text font-extrabold tracking-tight">Dashboard Ringkasan</h1>
-                <p class="text-coffee-muted text-sm mt-1">Kelola operasional dan administrasi sistem Jabat Kopi.</p>
+            <div class="mb-8 flex justify-between items-end">
+                <div>
+                    <h1 class="text-3.5xl text-coffee-text font-extrabold tracking-tight">Dashboard Ringkasan</h1>
+                    <p class="text-coffee-muted text-sm mt-1">Kelola operasional dan administrasi sistem Jabat Kopi.</p>
+                </div>
+                <div>
+                    <select wire:model.live="dateFilter" class="bg-neutral-900 border border-coffee-border text-coffee-text text-sm rounded-lg focus:ring-coffee-primary focus:border-coffee-primary block w-full p-2.5">
+                        <option value="today">Hari Ini</option>
+                        <option value="week">7 Hari Terakhir</option>
+                        <option value="month">Bulan Ini</option>
+                        <option value="all">Semua Waktu</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Stats Grid -->
@@ -302,8 +330,13 @@ new class extends Component
                 </div>
                 <div class="bg-gradient-to-br from-neutral-900 to-neutral-950 border border-coffee-border rounded-xl p-6 flex justify-between items-center shadow-lg">
                     <div>
-                        <h3 class="text-xs text-coffee-muted uppercase tracking-wider font-semibold mb-1">Pendapatan Hari Ini</h3>
-                        <div class="text-2xl font-bold text-coffee-primary font-outfit">Rp 1.425.000</div>
+                        <h3 class="text-xs text-coffee-muted uppercase tracking-wider font-semibold mb-1">
+                            @if($dateFilter === 'today') Pendapatan Hari Ini
+                            @elseif($dateFilter === 'week') Pendapatan Minggu Ini
+                            @elseif($dateFilter === 'month') Pendapatan Bulan Ini
+                            @else Total Pendapatan @endif
+                        </h3>
+                        <div class="text-2xl font-bold text-coffee-primary font-outfit">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
                     </div>
                 </div>
             </div>

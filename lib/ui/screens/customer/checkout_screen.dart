@@ -339,9 +339,10 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
           // Bottom Summary
           JkGlassCard(
             borderRadius: 0,
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom : 20),
             child: SafeArea(
               top: false,
+              bottom: false,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

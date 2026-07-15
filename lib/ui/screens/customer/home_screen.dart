@@ -23,6 +23,7 @@ import 'cart_screen.dart';
 import 'order_tracking_screen.dart';
 import 'edit_profile_screen.dart';
 import 'security_screen.dart';
+import 'payment_instruction_screen.dart';
 import 'dart:convert';
 
 class CustomerHomeScreen extends StatefulWidget {
@@ -403,10 +404,26 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
                         onTap: () async {
-                          await Navigator.push(
-                            context,
-                            JkPageRoute(page: OrderTrackingScreen(orderId: order.id)),
-                          );
+                          if (order.status == 'pending' && order.paymentDetails != null) {
+                            String snapUrl = order.paymentDetails?['snap_redirect_url'] ?? '';
+                            await Navigator.push(
+                              context,
+                              JkPageRoute(
+                                page: PaymentInstructionScreen(
+                                  orderId: order.id,
+                                  paymentMethod: order.paymentMethod,
+                                  paymentDetails: order.paymentDetails!,
+                                  totalAmount: order.totalAmount,
+                                  snapUrl: snapUrl,
+                                ),
+                              ),
+                            );
+                          } else {
+                            await Navigator.push(
+                              context,
+                              JkPageRoute(page: OrderTrackingScreen(orderId: order.id)),
+                            );
+                          }
                           _fetchHistory();
                         },
                         child: Padding(

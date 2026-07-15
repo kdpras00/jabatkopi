@@ -91,7 +91,7 @@ class OrderController extends Controller
             
             if ($request->payment_method !== 'cash') {
                 $authString = base64_encode(env('MIDTRANS_SERVER_KEY') . ':');
-                $orderIdString = 'JK-ORDER-' . $result;
+                $orderIdString = 'JK-ORDER-' . $result . '-' . time();
                 $grossAmount = (int)$totalAmount;
 
                 $payload = [
@@ -195,6 +195,12 @@ class OrderController extends Controller
                 }
             }
 
+            if (!empty($paymentDetails)) {
+                DB::table('orders')->where('id', $result)->update([
+                    'payment_details' => json_encode($paymentDetails),
+                ]);
+            }
+
             event(new \App\Events\OrderCreated());
 
             return response()->json([
@@ -245,6 +251,7 @@ class OrderController extends Controller
                     }
                 }
                 $order->items = $items->values();
+                $order->payment_details = $order->payment_details ? json_decode($order->payment_details, true) : null;
             }
         }
 
@@ -323,6 +330,8 @@ class OrderController extends Controller
             ->leftJoin('menus', 'order_items.menu_id', '=', 'menus.id')
             ->where('order_items.order_id', $id)
             ->get();
+            
+        $order->payment_details = $order->payment_details ? json_decode($order->payment_details, true) : null;
 
         return response()->json(['status' => 200, 'data' => $order]);
     }

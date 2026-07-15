@@ -38,6 +38,7 @@ class OrderModel {
   final String customerName;
   final String createdAt;
   final List<OrderItemModel> items;
+  final Map<String, dynamic>? paymentDetails;
 
   OrderModel({
     required this.id,
@@ -49,6 +50,7 @@ class OrderModel {
     required this.customerName,
     required this.createdAt,
     required this.items,
+    this.paymentDetails,
   });
 
   factory OrderModel.fromJson(Map json) {
@@ -64,6 +66,7 @@ class OrderModel {
       customerName: customer['name'] ?? json['customer_name'] ?? 'CUSTOMER TERHORMAT',
       createdAt: json['created_at'] ?? '',
       items: rawItems.map((item) => OrderItemModel.fromJson(item as Map)).toList(),
+      paymentDetails: json['payment_details'] != null ? Map<String, dynamic>.from(json['payment_details']) : null,
     );
   }
 }
