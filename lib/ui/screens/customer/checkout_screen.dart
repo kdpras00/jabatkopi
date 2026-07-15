@@ -129,7 +129,10 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       );
 
       final orderId = (orderData['order'] as Map?)?['id'] as int? ?? 0;
-      final paymentDetails = orderData['payment_details'] as Map<String, dynamic>? ?? {};
+      final rawPaymentDetails = orderData['payment_details'];
+      final paymentDetails = (rawPaymentDetails is Map)
+          ? Map<String, dynamic>.from(rawPaymentDetails)
+          : <String, dynamic>{};
 
       // Clear cart provider upon successful order creation
       if (mounted) {

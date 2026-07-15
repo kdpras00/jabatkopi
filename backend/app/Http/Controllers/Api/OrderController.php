@@ -85,7 +85,7 @@ class OrderController extends Controller
 
             $result = $orderId;
 
-            $paymentDetails = [];
+            $paymentDetails = (object)[];
             $snapToken = '';
             $snapRedirectUrl = '';
             
