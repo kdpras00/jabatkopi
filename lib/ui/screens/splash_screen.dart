@@ -69,9 +69,10 @@ class _SplashScreenState extends State<SplashScreen> {
                     errorBuilder: (context, error, stackTrace) => Container(color: AppColors.charcoal),
                   ),
                   // Content centered
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                  SafeArea(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -124,6 +125,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ),
                   ),
+                  ),
                 ],
               );
             },
@@ -131,10 +133,13 @@ class _SplashScreenState extends State<SplashScreen> {
           
           // Page Indicator & Buttons
           Positioned(
-            bottom: 60,
-            left: 40,
-            right: 40,
-            child: Column(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 40, right: 40, bottom: 60),
+                child: Column(
               children: [
                 // Indicators
                 Row(
@@ -207,6 +212,8 @@ class _SplashScreenState extends State<SplashScreen> {
                     ],
                   ),
               ],
+            ),
+              ),
             ),
           ),
         ],

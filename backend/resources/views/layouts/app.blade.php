@@ -49,7 +49,7 @@
                     </a>
                     
                     <ul class="list-none flex flex-col gap-2 grow w-full">
-                        @if(auth()->user()->role === 'admin')
+                        @if(auth()->user()->hasRole('admin'))
                             <li class="nav-item">
                                 <a href="{{ route('admin.dashboard') }}" 
                                    class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all {{ request()->routeIs('admin.dashboard') && request('tab', 'overview') === 'overview' ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
@@ -79,7 +79,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if(auth()->user()->role === 'pegawai')
+                        @if(auth()->user()->hasRole('pegawai'))
                             <li class="nav-item">
                                 <a href="{{ route('pegawai.dashboard') }}" 
                                    class="flex items-center gap-3 py-3 px-4 rounded-lg font-medium border border-transparent transition-all {{ request()->routeIs('pegawai.dashboard') && (!request('tab') || request('tab') === 'overview') ? 'bg-coffee-primary text-black font-semibold hover:bg-coffee-primary-hover hover:text-black' : 'text-coffee-muted hover:text-coffee-text hover:bg-coffee-primary/10 hover:border-coffee-primary/20' }}">
@@ -121,7 +121,7 @@
                         </button>
 
                         <!-- Active page/tab title -->
-                        @if(auth()->user()->role === 'admin')
+                        @if(auth()->user()->hasRole('admin'))
                             <h2 class="text-lg font-bold text-coffee-text font-outfit">
                                 @if(request('tab') === 'tables')
                                     Kelola Meja
@@ -154,7 +154,7 @@
                             </div>
                             <div class="flex flex-col items-start text-left max-sm:hidden">
                                 <span class="text-sm font-semibold text-coffee-text group-hover:text-coffee-primary">{{ auth()->user()->name }}</span>
-                                <span class="text-[10px] text-coffee-muted uppercase tracking-wider font-bold mt-0.5">{{ auth()->user()->role }}</span>
+                                <span class="text-[10px] text-coffee-muted uppercase tracking-wider font-bold mt-0.5">{{ auth()->user()->getRoleNames()->first() ?? 'customer' }}</span>
                             </div>
                         </button>
                         

@@ -242,9 +242,9 @@ class _MenuCatalogTabState extends State<MenuCatalogTab> {
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.75,
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 220,
+                        mainAxisExtent: 250,
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
                       ),

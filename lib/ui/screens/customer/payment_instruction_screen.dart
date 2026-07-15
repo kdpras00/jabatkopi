@@ -273,13 +273,16 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Flexible(
-                          child: SelectableText(
-                            vaNumber,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.softCream,
-                              letterSpacing: 1.0,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: SelectableText(
+                              vaNumber,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.softCream,
+                                letterSpacing: 1.0,
+                              ),
                             ),
                           ),
                         ),
@@ -303,12 +306,15 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Flexible(
-                          child: SelectableText(
-                            billerCode,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.softCream,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: SelectableText(
+                              billerCode,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.softCream,
+                              ),
                             ),
                           ),
                         ),
@@ -329,12 +335,15 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Flexible(
-                          child: SelectableText(
-                            billKey,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.softCream,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: SelectableText(
+                              billKey,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.softCream,
+                              ),
                             ),
                           ),
                         ),
@@ -358,13 +367,16 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Flexible(
-                          child: SelectableText(
-                            paymentCode,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.softCream,
-                              letterSpacing: 1.0,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: SelectableText(
+                              paymentCode,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.softCream,
+                                letterSpacing: 1.0,
+                              ),
                             ),
                           ),
                         ),

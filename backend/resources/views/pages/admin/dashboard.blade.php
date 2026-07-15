@@ -92,23 +92,23 @@ new class extends Component
                 'name' => $this->staffName,
                 'username' => $this->staffUsername,
                 'email' => $this->staffEmail,
-                'role' => $this->staffRole,
             ]);
+            $user->syncRoles([$this->staffRole]);
 
             if ($this->staffPassword) {
                 $user->update([
-                    'password_hash' => bcrypt($this->staffPassword)
+                    'password' => bcrypt($this->staffPassword)
                 ]);
             }
             $this->dispatch('toast', text: 'Akun staff berhasil diperbarui.', type: 'success');
         } else {
-            User::create([
+            $user = User::create([
                 'name' => $this->staffName,
                 'username' => $this->staffUsername,
                 'email' => $this->staffEmail,
-                'role' => $this->staffRole,
-                'password_hash' => bcrypt($this->staffPassword),
+                'password' => bcrypt($this->staffPassword),
             ]);
+            $user->assignRole($this->staffRole);
             $this->dispatch('toast', text: 'Akun staff baru berhasil dibuat.', type: 'success');
         }
 
@@ -122,7 +122,7 @@ new class extends Component
         $this->staffName = $user->name;
         $this->staffUsername = $user->username;
         $this->staffEmail = $user->email;
-        $this->staffRole = $user->role;
+        $this->staffRole = $user->getRoleNames()->first() ?? 'pegawai';
         
         $this->isEditing = true;
         $this->showForm = true;
@@ -250,12 +250,12 @@ new class extends Component
 
     public function render()
     {
-        $allUsers = User::all();
+        $allUsers = User::with('roles')->get();
         $totalUsers = $allUsers->count();
-        $totalAdmin = $allUsers->where('role', 'admin')->count();
-        $totalPegawai = $allUsers->where('role', 'pegawai')->count();
+        $totalAdmin = User::role('admin')->count();
+        $totalPegawai = User::role('pegawai')->count();
         
-        $staff = $allUsers->whereIn('role', ['admin', 'pegawai']);
+        $staff = User::role(['admin', 'pegawai'])->get();
         
         $tables = Table::all();
         $menus = Menu::all();
@@ -777,7 +777,7 @@ new class extends Component
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">{{ $user->username }}</td>
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">{{ $user->email }}</td>
                                     <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
-                                        @if($user->role === 'admin')
+                                        @if($user->hasRole('admin'))
                                             <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Admin</span>
                                         @else
                                             <span class="bg-amber-500 text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Pegawai</span>
@@ -807,7 +807,7 @@ new class extends Component
                         <div class="bg-black/40 border border-coffee-border/60 rounded-xl p-4 flex flex-col gap-2 shadow-md">
                             <div class="flex justify-between items-center">
                                 <h4 class="font-bold text-coffee-text text-base">{{ $user->name }}</h4>
-                                 @if($user->role === 'admin')
+                                 @if($user->hasRole('admin'))
                                     <span class="bg-coffee-danger text-black px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Admin</span>
                                  @else
                                     <span class="bg-amber-500 text-black px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Pegawai</span>

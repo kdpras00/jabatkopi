@@ -23,14 +23,14 @@ new class extends Component
             session()->regenerate();
 
             $user = Auth::user();
-            if ($user->role === 'admin') {
+            if ($user->hasRole('admin')) {
                 $this->redirectRoute('admin.dashboard');
-            } elseif ($user->role === 'pegawai') {
+            } elseif ($user->hasRole('pegawai')) {
                 $this->redirectRoute('pegawai.dashboard');
             } else {
                 Auth::logout();
                 throw ValidationException::withMessages([
-                    'email' => 'Role tidak dikenali.',
+                    'email' => 'Akses ditolak. Hubungi administrator.',
                 ]);
             }
             return;

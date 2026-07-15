@@ -108,7 +108,7 @@ class CustomerCartScreen extends StatelessWidget {
                                   onTap: () => cartProvider.updateQuantity(item.menu.id, item.quantity - 1),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
                                   child: Text('${item.quantity}',
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 ),
@@ -250,12 +250,12 @@ class _QtyBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
           color: AppColors.caramelGold,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 20, color: AppColors.charcoal),
+        child: Icon(icon, size: 18, color: AppColors.charcoal),
       ),
     );
   }

@@ -9,17 +9,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password_hash', 'role', 'username', 'image_url'])]
-#[Hidden(['password_hash', 'remember_token'])]
+#[Fillable(['name', 'email', 'password', 'username', 'image_url'])]
+#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     public function getAuthPassword(): string
     {
-        return $this->password_hash;
+        return $this->password;
     }
 
     protected function casts(): array

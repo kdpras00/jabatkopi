@@ -27,7 +27,7 @@ class MenuModel {
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       description: json['description'] ?? '',
       imageUrl: json['image_url'] ?? '',
-      isAvailable: json['is_available'] ?? true,
+      isAvailable: json['is_available'] == 1 || json['is_available'] == true,
       stock: json['stock'] ?? 0,
     );
   }

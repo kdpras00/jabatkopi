@@ -61,12 +61,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             opacity: 0.3,
           ),
         ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                 const Text(
                   'JABAT KOPI',
                   style: TextStyle(
@@ -114,6 +115,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),

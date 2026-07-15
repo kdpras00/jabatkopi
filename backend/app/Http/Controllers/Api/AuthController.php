@@ -16,8 +16,7 @@ class AuthController extends Controller
         ]);
 
         $user = \App\Models\User::where('email', $request->email)->first();
-        if (!$user) return response()->json(['message' => 'Email tidak ditemukan'], 404);
-        if (!Hash::check($request->password, $user->password_hash)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Email atau password salah'], 401);
         }
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -27,7 +26,7 @@ class AuthController extends Controller
             'data' => [
                 'id' => $user->id,
                 'token' => $token,
-                'role' => $user->role ?? 'customer',
+                'role' => $user->getRoleNames()->first() ?? 'customer',
                 'username' => $user->username ?? 'User',
             ]
         ]);
@@ -48,11 +47,14 @@ class AuthController extends Controller
             'name' => $request->name,
             'username' => $request->username,
             'email' => $request->email,
-            'password_hash' => Hash::make($request->password),
-            'role' => 'customer',
+            'password' => Hash::make($request->password),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        $user = \App\Models\User::where('email', $request->email)->first();
+        if ($user) {
+            $user->assignRole('customer');
+        }
         return response()->json(['status' => 201, 'message' => 'Pendaftaran berhasil!']);
     }
 
@@ -60,7 +62,7 @@ class AuthController extends Controller
     {
         $customerId = auth()->id();
         if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
-        $user = DB::table('users')->where('id', $customerId)->first();
+        $user = \App\Models\User::find($customerId);
         return response()->json([
             'status' => 200,
             'data' => [
@@ -69,7 +71,7 @@ class AuthController extends Controller
                 'username' => $user->username ?? '',
                 'email' => $user->email ?? '',
                 'image_url' => $user->image_url ?? '',
-                'role' => $user->role ?? 'customer',
+                'role' => $user->getRoleNames()->first() ?? 'customer',
             ]
         ]);
     }
@@ -87,12 +89,15 @@ class AuthController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $user = User::create([
+        $user = \App\Models\User::find(auth()->id());
+        $user->update([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role ?? 'customer',
         ]);
+        if ($request->role) {
+            $user->syncRoles([$request->role]);
+        }
         return response()->json(['status' => 200, 'message' => 'Profil berhasil diperbarui!']);
     }
 
@@ -100,15 +105,14 @@ class AuthController extends Controller
     {
         $customerId = auth()->id();
         if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
-        $user = DB::table('users')->where('id', $customerId)->first();
+        $user = \App\Models\User::find($customerId);
 
-        if (!Hash::check($request->old_password, $user->password_hash)) {
+        if (!Hash::check($request->old_password, $user->password)) {
             return response()->json(['message' => 'Password lama Anda tidak sesuai.'], 400);
         }
 
-        DB::table('users')->where('id', $customerId)->update([
-            'password_hash' => Hash::make($request->new_password),
-            'updated_at' => now(),
+        $user->update([
+            'password' => Hash::make($request->new_password),
         ]);
         return response()->json(['status' => 200, 'message' => 'Password berhasil diperbarui!']);
     }
