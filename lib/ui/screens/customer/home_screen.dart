@@ -867,7 +867,12 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                         Icons.person_outline, 
                         'Edit Profile', 
                         'Update your personal info',
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+                        onTap: () async {
+                          final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfileScreen()));
+                          if (result == true) {
+                            _fetchProfile();
+                          }
+                        },
                       ),
                       const Divider(color: Colors.white10, height: 1, indent: 20, endIndent: 20),
 
