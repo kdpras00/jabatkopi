@@ -90,7 +90,7 @@ class OrderController extends Controller
             $snapRedirectUrl = '';
             
             if ($request->payment_method !== 'cash') {
-                $authString = base64_encode(env('MIDTRANS_SERVER_KEY') . ':');
+                $authString = base64_encode(config('services.midtrans.server_key') . ':');
                 $orderIdString = 'JK-ORDER-' . $result;
                 $grossAmount = (int)$totalAmount;
 
@@ -153,8 +153,8 @@ class OrderController extends Controller
                         break;
                 }
 
-                $serverKey = env('MIDTRANS_SERVER_KEY', '');
-                $isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+                $serverKey = config('services.midtrans.server_key');
+                $isProduction = config('services.midtrans.is_production');
                 $midtransApiUrl = $isProduction ? 'https://api.midtrans.com/v2/charge' : 'https://api.sandbox.midtrans.com/v2/charge';
 
                 $response = Http::withHeaders([
