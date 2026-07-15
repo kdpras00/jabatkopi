@@ -99,7 +99,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 // Serve images with CORS headers to satisfy CanvasKit renderer without needing --web-renderer html
 // If image is missing, serve a transparent 1x1 pixel so CanvasKit doesn't crash trying to decode a 404 HTML page!
 Route::get('/images/menus/{filename}', function($filename) {
-    $path = storage_path('app/public/menus/' . $filename);
+    if ($filename === 'default-menu.png') {
+        $path = storage_path('app/public/images/' . $filename);
+    } else {
+        $path = storage_path('app/public/menus/' . $filename);
+    }
+    
     if (!file_exists($path)) {
         // Proxy dari production supaya tidak ada cross-origin redirect
         if (config('app.env') === 'local') {
