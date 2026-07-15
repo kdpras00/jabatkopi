@@ -595,8 +595,8 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                   itemBuilder: (context, index) {
                     final res = _reservations[index];
                     final bookingId = 'JK-RES-${res['id']}';
-                    final tableId = res['table_id'] ?? 0;
-                    final pax = res['pax'] ?? 0;
+                    final tableId = int.tryParse(res['table_id']?.toString() ?? '0') ?? 0;
+                    final pax = int.tryParse(res['pax']?.toString() ?? '0') ?? 0;
                     final status = res['status']?.toString() ?? 'pending';
 
                     Color statusColor;
@@ -643,8 +643,8 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                             context,
                             JkPageRoute(
                               page: ReservationSummaryScreen(
-                                date: DateTime.parse(res['reservation_date']),
-                                time: DateFormat('HH:mm').format(DateTime.parse(res['reservation_date'])),
+                                date: DateTime.tryParse(res['reservation_date']?.toString() ?? '') ?? DateTime.now(),
+                                time: DateFormat('HH:mm').format(DateTime.tryParse(res['reservation_date']?.toString() ?? '') ?? DateTime.now()),
                                 guests: pax,
                                 tableId: tableId,
                                 qrCode: res['qr_code'] ?? 'JK-RES-${res['id']}',

@@ -154,7 +154,7 @@ class OrderController extends Controller
                 }
 
                 $serverKey = env('MIDTRANS_SERVER_KEY', '');
-                $isProduction = !str_starts_with($serverKey, 'SB-');
+                $isProduction = env('MIDTRANS_IS_PRODUCTION', false);
                 $midtransApiUrl = $isProduction ? 'https://api.midtrans.com/v2/charge' : 'https://api.sandbox.midtrans.com/v2/charge';
 
                 $response = Http::withHeaders([
@@ -219,6 +219,14 @@ class OrderController extends Controller
             ]);
 
         } catch (\Throwable $e) {
+            if (isset($result)) {
+                $items = DB::table('order_items')->where('order_id', $result)->get();
+                foreach ($items as $item) {
+                    DB::table('menus')->where('id', $item->menu_id)->increment('stock', $item->qty);
+                }
+                DB::table('order_items')->where('order_id', $result)->delete();
+                DB::table('orders')->where('id', $result)->delete();
+            }
             \Illuminate\Support\Facades\Log::error('Order creation failed: ' . $e->getMessage() . ' on line ' . $e->getLine());
             return response()->json(['message' => $e->getMessage()], 400);
         }
