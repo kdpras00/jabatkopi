@@ -298,11 +298,20 @@ class OrderHistoryTab extends StatefulWidget {
 class _OrderHistoryTabState extends State<OrderHistoryTab> {
   List<OrderModel> _orders = [];
   bool _isLoading = true;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _fetchHistory();
+    // Auto-polling setiap 10 detik agar terkesan realtime
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchHistory());
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchHistory() async {
@@ -347,11 +356,14 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
                   title: 'Belum Ada Pesanan',
                   description: 'Yuk, cari dan nikmati kopi favoritmu sekarang juga!',
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _orders.length,
-                  itemBuilder: (context, index) {
-                    final order = _orders[index];
+              : RefreshIndicator(
+                  onRefresh: _fetchHistory,
+                  color: AppColors.accentBlue,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _orders.length,
+                    itemBuilder: (context, index) {
+                      final order = _orders[index];
                     Color badgeColor;
                     switch (order.status) {
                       case 'pending': badgeColor = Colors.orange; break;
@@ -489,6 +501,7 @@ class _OrderHistoryTabState extends State<OrderHistoryTab> {
                     );
                   },
                 ),
+              ),
     );
   }
 }
