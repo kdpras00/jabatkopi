@@ -115,6 +115,14 @@
             background: var(--accent-bg);
         }
 
+        .nav-link.sub {
+            padding-left: 32px;
+            font-size: 12px;
+            color: var(--ink-muted);
+        }
+
+        .nav-link.sub:hover { color: var(--ink-secondary); }
+
         /* ── Main ── */
         #main {
             margin-left: var(--sidebar);
@@ -329,20 +337,7 @@
     </div>
 
     <nav id="sidenav">
-        <span class="nav-label">Mulai</span>
-        <a class="nav-link" href="#dokumentasi-api-jabat-kopi">Pengantar</a>
-
-        <span class="nav-label">Endpoint</span>
-        <a class="nav-link" href="#-1-authentication">Authentication</a>
-        <a class="nav-link" href="#-2-menus">Menus</a>
-        <a class="nav-link" href="#-3-tables-meja">Tables</a>
-        <a class="nav-link" href="#-4-reservations">Reservations</a>
-        <a class="nav-link" href="#-5-orders--pembayaran">Orders & Bayar</a>
-        <a class="nav-link" href="#-6-admin-endpoints">Admin</a>
-        <a class="nav-link" href="#-7-image-proxy">Image Proxy</a>
-
-        <span class="nav-label">Referensi</span>
-        <a class="nav-link" href="#-error-codes">Error Codes</a>
+        <!-- nav dibangun otomatis dari heading setelah markdown dirender -->
     </nav>
 </aside>
 
@@ -370,11 +365,60 @@
             // Syntax highlight
             el.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
 
-            // Active nav on scroll
-            const links = document.querySelectorAll('.nav-link[href^="#"]');
-            const headings = [...el.querySelectorAll('h2, h3')];
+            // ── Build sidebar nav from actual rendered headings ──
+            // marked.js generates IDs itself, so we read them back
+            // to guarantee href always matches the real anchor.
+            const sidenav = document.getElementById('sidenav');
+            sidenav.innerHTML = '';
 
-            const ioOpts = { rootMargin: '-20% 0px -75% 0px' };
+            const headings = [...el.querySelectorAll('h1, h2, h3')];
+
+            headings.forEach(h => {
+                const id = h.id;
+                const text = h.textContent
+                    // Strip leading emoji + numbers like "🔐 1. " → "Authentication"
+                    .replace(/^[\p{Emoji}\s\d.]+/u, '')
+                    .trim();
+
+                if (!id || !text) return;
+
+                if (h.tagName === 'H1') {
+                    const label = document.createElement('span');
+                    label.className = 'nav-label';
+                    label.textContent = 'Mulai';
+                    sidenav.appendChild(label);
+
+                    const a = document.createElement('a');
+                    a.className = 'nav-link';
+                    a.href = '#' + id;
+                    a.textContent = 'Pengantar';
+                    sidenav.appendChild(a);
+
+                    const label2 = document.createElement('span');
+                    label2.className = 'nav-label';
+                    label2.textContent = 'Endpoint';
+                    sidenav.appendChild(label2);
+                    return;
+                }
+
+                // Add "Referensi" label before the error codes section
+                if (h.tagName === 'H2' && text.toLowerCase().includes('error')) {
+                    const label = document.createElement('span');
+                    label.className = 'nav-label';
+                    label.textContent = 'Referensi';
+                    sidenav.appendChild(label);
+                }
+
+                const a = document.createElement('a');
+                a.className = 'nav-link' + (h.tagName === 'H3' ? ' sub' : '');
+                a.href = '#' + id;
+                a.textContent = text;
+                sidenav.appendChild(a);
+            });
+
+            // ── Active state on scroll ──
+            const links = sidenav.querySelectorAll('.nav-link');
+            const ioOpts = { rootMargin: '-15% 0px -75% 0px' };
             const io = new IntersectionObserver(entries => {
                 entries.forEach(e => {
                     if (!e.isIntersecting) return;
