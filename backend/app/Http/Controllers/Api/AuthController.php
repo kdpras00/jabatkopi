@@ -78,26 +78,26 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request)
     {
+        $user = \App\Models\User::find(auth()->id());
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => 'in:customer,staff',
+            'username' => 'required|string|max:255|unique:users,username,'.$user->id,
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $user = \App\Models\User::find(auth()->id());
-        $user->update([
+        $updateData = [
             'name' => $request->name,
+            'username' => $request->username,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-        if ($request->role) {
-            $user->syncRoles([$request->role]);
+        ];
+
+        if ($request->has('image_url')) {
+            $updateData['image_url'] = $request->image_url;
         }
+
+        $user->update($updateData);
+
         return response()->json(['status' => 200, 'message' => 'Profil berhasil diperbarui!']);
     }
 
