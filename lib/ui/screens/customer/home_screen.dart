@@ -199,7 +199,9 @@ class _MenuCatalogTabState extends State<MenuCatalogTab> {
                     actions: [
                       IconButton(
                         icon: const Icon(Icons.event_seat_outlined, color: AppColors.caramelGold),
-                        onPressed: () => Navigator.push(context, JkPageRoute(page: const CustomerReservationScreen())),
+                        onPressed: () async {
+                          await Navigator.push(context, JkPageRoute(page: const CustomerReservationScreen()));
+                        },
                       ),
                       const SizedBox(width: 8),
                     ],

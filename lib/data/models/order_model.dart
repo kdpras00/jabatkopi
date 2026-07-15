@@ -18,11 +18,11 @@ class OrderItemModel {
   factory OrderItemModel.fromJson(Map json) {
     final menu = json['menu'] != null ? Map.from(json['menu']) : {};
     return OrderItemModel(
-      id: json['id'] ?? 0,
-      menuId: json['menu_id'] ?? 0,
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      menuId: int.tryParse(json['menu_id']?.toString() ?? '0') ?? 0,
       menuName: json['menu_name'] ?? menu['name'] ?? 'Item',
       price: double.tryParse((json['price'] ?? menu['price'])?.toString() ?? '0') ?? 0.0,
-      qty: json['qty'] ?? 0,
+      qty: int.tryParse(json['qty']?.toString() ?? '0') ?? 0,
       subtotal: double.tryParse(json['subtotal']?.toString() ?? '0') ?? 0.0,
     );
   }
@@ -55,8 +55,8 @@ class OrderModel {
     final rawItems = json['items'] as List<dynamic>? ?? [];
     final customer = json['customer'] != null ? Map.from(json['customer']) : {};
     return OrderModel(
-      id: json['id'] ?? 0,
-      tableId: json['table_id'] as int?,
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      tableId: json['table_id'] != null ? int.tryParse(json['table_id'].toString()) : null,
       totalAmount: double.tryParse(json['total_amount']?.toString() ?? '0') ?? 0.0,
       status: json['status'] ?? 'pending',
       paymentMethod: json['payment_method'] ?? '',
