@@ -46,25 +46,26 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USERNAME }}
           SSH_PORT: 2223
         run: |
+          set -x
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts
 
           # Ensure target exists
-          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST \
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p $SSH_PORT $SSH_USER@$SSH_HOST \
             "mkdir -p ~/public_html/domains/jabatkopi.my.id"
 
           # Stream tar directly — exclude vendor, composer install on server instead
           tar -czf - \
-            --exclude='backend/.env' \
-            --exclude='backend/vendor' \
-            --exclude='backend/.git' \
-            --exclude='backend/node_modules' \
-            --exclude='backend/storage/app/public' \
-            --exclude='backend/tests' \
+            --exclude='./.env' \
+            --exclude='./vendor' \
+            --exclude='./.git' \
+            --exclude='./node_modules' \
+            --exclude='./storage/app/public' \
+            --exclude='./tests' \
             -C backend . | \
-          ssh -i ~/.ssh/deploy_key -p $SSH_PORT -T $SSH_USER@$SSH_HOST \
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p $SSH_PORT -T $SSH_USER@$SSH_HOST \
             "tar -xzf - -C ~/public_html/domains/jabatkopi.my.id"
 
       - name: Run Laravel Optimizations via SSH
@@ -74,12 +75,13 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USERNAME }}
           SSH_PORT: 2223
         run: |
+          set -x
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts
 
-          ssh -i ~/.ssh/deploy_key -p $SSH_PORT $SSH_USER@$SSH_HOST "
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p $SSH_PORT $SSH_USER@$SSH_HOST "
             cd ~/public_html/domains/jabatkopi.my.id
             ~/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-req=ext-sodium
             php artisan migrate --force
