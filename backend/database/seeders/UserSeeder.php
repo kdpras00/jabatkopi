@@ -13,26 +13,29 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Seed Admin User
-        $admin = User::factory()->create([
+        $admin = User::create([
             'name' => 'Admin Jabat Kopi',
             'email' => 'admin@jabatkopi.com',
             'password' => bcrypt('password'),
+            'email_verified_at' => now(),
         ]);
         $admin->assignRole('admin');
 
         // Seed Pegawai User
-        $pegawai = User::factory()->create([
+        $pegawai = User::create([
             'name' => 'Pegawai Jabat Kopi',
             'email' => 'pegawai@jabatkopi.com',
             'password' => bcrypt('password'),
+            'email_verified_at' => now(),
         ]);
         $pegawai->assignRole('pegawai');
 
         // Seed Customer User
-        $customer = User::factory()->create([
+        $customer = User::create([
             'name' => 'Customer Jabat Kopi',
             'email' => 'customer@jabatkopi.com',
             'password' => bcrypt('password'),
+            'email_verified_at' => now(),
         ]);
         $customer->assignRole('customer');
     }
