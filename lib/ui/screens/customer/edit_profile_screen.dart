@@ -105,12 +105,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           backgroundColor: AppColors.darkGrey,
                           backgroundImage: _pickedImage != null 
                             ? (kIsWeb ? NetworkImage(_pickedImage!.path) : FileImage(File(_pickedImage!.path)) as ImageProvider)
-                            : (_imageUrl != null && _imageUrl!.isNotEmpty 
-                                ? (_imageUrl!.startsWith('data:image') 
-                                    ? MemoryImage(base64Decode(_imageUrl!.split(',').last)) 
-                                    : NetworkImage(_imageUrl!)) as ImageProvider
-                                : null),
-                          child: (_pickedImage == null && (_imageUrl == null || _imageUrl!.isEmpty))
+                            : _getSafeImageProvider(_imageUrl),
+                          child: (_pickedImage == null && (_imageUrl == null || _imageUrl!.isEmpty || _getSafeImageProvider(_imageUrl) == null))
                             ? const Icon(Icons.person, size: 50, color: AppColors.caramelGold)
                             : null,
                         ),
@@ -175,4 +171,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ],
     );
   }
+}
+
+ImageProvider? _getSafeImageProvider(String? url) {
+  if (url == null || url.isEmpty) return null;
+  if (url.startsWith('data:image')) {
+    try {
+      final base64String = url.split(',').last;
+      return MemoryImage(base64Decode(base64String));
+    } catch (e) {
+      return null;
+    }
+  }
+  return NetworkImage(url);
 }

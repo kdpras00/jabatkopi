@@ -829,12 +829,8 @@ class _CustomerProfileTabState extends State<CustomerProfileTab> {
                         child: CircleAvatar(
                           radius: 32,
                           backgroundColor: AppColors.darkGrey,
-                          backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-                              ? (imageUrl.startsWith('data:image')
-                                  ? MemoryImage(base64Decode(imageUrl.split(',').last))
-                                  : NetworkImage(imageUrl)) as ImageProvider
-                              : null,
-                          child: (imageUrl == null || imageUrl.isEmpty)
+                          backgroundImage: _getSafeImageProvider(imageUrl),
+                          child: (imageUrl == null || imageUrl.isEmpty || _getSafeImageProvider(imageUrl) == null)
                               ? const Icon(Icons.person, size: 36, color: AppColors.caramelGold)
                               : null,
                         ),
@@ -1035,6 +1031,18 @@ Widget _buildEmptyState({
           ),
         ],
       ),
-    ),
   );
+}
+
+ImageProvider? _getSafeImageProvider(String? url) {
+  if (url == null || url.isEmpty) return null;
+  if (url.startsWith('data:image')) {
+    try {
+      final base64String = url.split(',').last;
+      return MemoryImage(base64Decode(base64String));
+    } catch (e) {
+      return null;
+    }
+  }
+  return NetworkImage(url);
 }
