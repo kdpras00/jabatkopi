@@ -1031,6 +1031,7 @@ Widget _buildEmptyState({
           ),
         ],
       ),
+    ),
   );
 }
 
