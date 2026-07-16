@@ -296,8 +296,8 @@ class OrderController extends Controller
 
         if ($order->status === 'pending' || $order->payment_method === 'BANK TRANSFER' || $order->payment_method === 'bank_transfer') {
             try {
-                $authString = base64_encode(env('MIDTRANS_SERVER_KEY') . ':');
-                $isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+                $authString = base64_encode(config('services.midtrans.server_key') . ':');
+                $isProduction = config('services.midtrans.is_production', false);
                 $midtransApiUrl = $isProduction ? 'https://api.midtrans.com/v2/' : 'https://api.sandbox.midtrans.com/v2/';
                 $response = Http::withHeaders([
                     'Authorization' => 'Basic ' . $authString,
