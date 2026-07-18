@@ -313,6 +313,53 @@ class OrderController extends Controller
                         $paymentType = 'bank_transfer_' . $resData['va_numbers'][0]['bank'];
                     }
 
+                    $paymentDetails = json_decode($order->payment_details, true) ?? [];
+                    $detailsUpdated = false;
+
+                    if (empty($paymentDetails)) {
+                        if (isset($resData['va_numbers'][0]['va_number'])) {
+                            $paymentDetails['va_number'] = $resData['va_numbers'][0]['va_number'];
+                            $paymentDetails['bank'] = $resData['va_numbers'][0]['bank'];
+                            $detailsUpdated = true;
+                        } else if (isset($resData['permata_va_number'])) {
+                            $paymentDetails['va_number'] = $resData['permata_va_number'];
+                            $paymentDetails['bank'] = 'permata';
+                            $detailsUpdated = true;
+                        }
+
+                        if (isset($resData['biller_code']) && isset($resData['bill_key'])) {
+                            $paymentDetails['biller_code'] = $resData['biller_code'];
+                            $paymentDetails['bill_key'] = $resData['bill_key'];
+                            $detailsUpdated = true;
+                        }
+
+                        if (isset($resData['payment_code'])) {
+                            $paymentDetails['payment_code'] = $resData['payment_code'];
+                            $detailsUpdated = true;
+                        }
+
+                        if (isset($resData['actions']) && is_array($resData['actions'])) {
+                            foreach ($resData['actions'] as $action) {
+                                if ($action['name'] === 'generate-qr-code') {
+                                    $paymentDetails['qr_url'] = $action['url'];
+                                    $detailsUpdated = true;
+                                }
+                                if ($action['name'] === 'deeplink-redirect') {
+                                    $paymentDetails['deeplink_url'] = $action['url'];
+                                    $detailsUpdated = true;
+                                }
+                            }
+                        }
+
+                        if ($detailsUpdated) {
+                            DB::table('orders')->where('id', $id)->update([
+                                'payment_details' => json_encode($paymentDetails),
+                                'updated_at' => now(),
+                            ]);
+                            $order->payment_details = json_encode($paymentDetails);
+                        }
+                    }
+
                     if ($transactionStatus === 'settlement' || $transactionStatus === 'capture') {
                         DB::table('orders')->where('id', $id)->update([
                             'status' => 'processing',

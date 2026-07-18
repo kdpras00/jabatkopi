@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,23 +33,41 @@ class PaymentInstructionScreen extends StatefulWidget {
 class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
   bool _isLoading = false;
   late Map<String, dynamic> _currentDetails;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
     super.initState();
     _currentDetails = widget.paymentDetails;
+    _startPolling();
   }
 
-  Future<void> _checkPaymentStatus() async {
-    setState(() {
-      _isLoading = true;
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPolling() {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _checkPaymentStatus(isBackground: true);
     });
+  }
+
+  Future<void> _checkPaymentStatus({bool isBackground = false}) async {
+    if (_isLoading && !isBackground) return;
+    if (!isBackground) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final repo = OrderRepository(apiClient: ApiClient());
       final details = await repo.getOrderDetails(widget.orderId);
 
       if (details.status == 'processing' || details.status == 'completed' || details.status == 'preparing' || details.status == 'ready') {
+        _pollingTimer?.cancel();
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -60,16 +79,13 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
         return;
       }
 
-      // If still pending, refresh the payment details in case they loaded later
-      final rawDetailsRes = await ApiClient().get('/orders/${widget.orderId}/details');
-      final newDetails = rawDetailsRes['data']?['payment_details'] as Map<String, dynamic>?;
-      if (newDetails != null && mounted) {
+      if (details.paymentDetails != null && mounted) {
         setState(() {
-          _currentDetails = newDetails;
+          _currentDetails = details.paymentDetails!;
         });
       }
 
-      if (mounted) {
+      if (mounted && !isBackground) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Pembayaran belum diterima. Silakan selesaikan pembayaran Anda.'),
@@ -78,7 +94,7 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted && !isBackground) {
         String userFriendlyError = 'Gagal mengecek status pembayaran. Silakan coba beberapa saat lagi.';
         final errStr = e.toString();
         if (errStr.contains('SocketException') || errStr.contains('ClientException') || errStr.contains('XMLHttpRequest')) {
@@ -92,7 +108,7 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
         );
       }
     } finally {
-      if (mounted) {
+      if (mounted && !isBackground) {
         setState(() {
           _isLoading = false;
         });
