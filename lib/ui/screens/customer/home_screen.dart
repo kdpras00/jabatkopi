@@ -514,11 +514,20 @@ class ReservationHistoryTab extends StatefulWidget {
 class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
   List<Map<String, dynamic>> _reservations = [];
   bool _isLoading = true;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _fetchReservations();
+    // Auto-polling setiap 10 detik agar terkesan realtime
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => _fetchReservations());
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchReservations() async {
