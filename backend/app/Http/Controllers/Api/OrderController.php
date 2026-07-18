@@ -2,6 +2,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\Table;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -399,14 +401,41 @@ class OrderController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
+        $request->validate(['status' => 'required|string|in:pending,processing,preparing,ready,completed,cancelled']);
         DB::table('orders')->where('id', $id)->update(['status' => $request->status, 'updated_at' => now()]);
-
         return response()->json(['status' => 200, 'message' => 'Status updated']);
     }
 
     public function cancel($id)
     {
-        DB::table('orders')->where('id', $id)->update(['status' => 'cancelled', 'updated_at' => now()]);
-        return response()->json(['status' => 200, 'message' => 'Order cancelled']);
+        $order = Order::find($id);
+        if (!$order) return response()->json(['message' => 'Order tidak ditemukan'], 404);
+
+        // Hanya izinkan pembatalan milik pelanggan yang sedang login
+        if (auth()->id() && $order->customer_id !== auth()->id()) {
+            return response()->json(['message' => 'Tidak diizinkan membatalkan pesanan ini'], 403);
+        }
+
+        if ($order->status === 'cancelled') {
+            return response()->json(['message' => 'Pesanan sudah dibatalkan sebelumnya'], 400);
+        }
+
+        // 1. Kembalikan stok menu
+        DB::table('menus')
+            ->joinSub(
+                DB::table('order_items')->where('order_id', $order->id)->select('menu_id', 'qty'),
+                'oi', 'oi.menu_id', '=', 'menus.id'
+            )
+            ->update(['menus.stock' => DB::raw('menus.stock + oi.qty')]);
+
+        // 2. Bebaskan meja
+        if ($order->table_id) {
+            Table::find($order->table_id)?->update(['status' => 'available']);
+        }
+
+        $order->update(['status' => 'cancelled', 'updated_at' => now()]);
+        event(new \App\Events\OrderCreated());
+
+        return response()->json(['status' => 200, 'message' => 'Pesanan berhasil dibatalkan']);
     }
 }

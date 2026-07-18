@@ -18,6 +18,17 @@ class PaymentController extends Controller
         $orderIdStr = $request->input('order_id');
         $transactionStatus = $request->input('transaction_status');
         $paymentType = $request->input('payment_type');
+        $statusCode = $request->input('status_code');
+        $grossAmount = $request->input('gross_amount');
+        $signatureKey = $request->input('signature_key');
+
+        $serverKey = config('services.midtrans.server_key');
+        $expectedSignature = hash('sha512', $orderIdStr . $statusCode . $grossAmount . $serverKey);
+
+        if ($expectedSignature !== $signatureKey) {
+            Log::warning('Invalid Midtrans Signature', ['request' => $request->all()]);
+            return response()->json(['message' => 'Invalid signature key'], 403);
+        }
 
         if (!$orderIdStr) {
             return response()->json(['message' => 'Invalid payload'], 400);

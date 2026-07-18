@@ -74,6 +74,10 @@ new class extends Component
                         'oi', 'oi.menu_id', '=', 'menus.id'
                     )
                     ->update(['menus.stock' => DB::raw('menus.stock + oi.qty')]);
+
+                if ($order->table_id) {
+                    Table::find($order->table_id)->update(['status' => 'available']);
+                }
             }
 
             // Note: Jangan ubah status meja atau reservasi saat pesanan selesai disajikan (completed).
@@ -88,6 +92,10 @@ new class extends Component
         $order = Order::find($orderId);
         $table = Table::find($tableId);
         if ($order && $table) {
+            if ($table->status === 'occupied') {
+                $this->dispatch('toast', text: "Gagal: Meja {$table->qr_code_ref} sudah terpakai.", type: 'error');
+                return;
+            }
             $order->update(['table_id' => $tableId]);
             if ($table->status !== 'occupied') {
                 $table->update(['status' => 'occupied']);
@@ -232,7 +240,7 @@ new class extends Component
         $activeOrdersCount = Order::whereNotIn('status', ['completed', 'cancelled'])->count();
         $activeReservationsCount = Reservation::whereIn('status', ['booked', 'checked_in'])->count();
 
-        $ordersQuery = Order::with(['customer', 'table'])->orderBy('created_at', 'desc');
+        $ordersQuery = Order::with(['customer', 'table', 'items.menu'])->orderBy('created_at', 'desc');
         if ($this->orderFilter !== 'all') {
             $ordersQuery->where('status', $this->orderFilter);
         }
@@ -344,6 +352,7 @@ new class extends Component
                         <tr>
                             <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">ID Pesanan</th>
                             <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Pelanggan</th>
+                            <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Menu Dipesan</th>
                             <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Nomor Meja</th>
                             <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Total</th>
                             <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Pembayaran</th>
@@ -355,16 +364,25 @@ new class extends Component
                         @forelse($orders as $order)
                             <tr class="hover:bg-coffee-primary/3">
                                 <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-semibold font-mono">#{{ $order->id }}</td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
+                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-semibold">
                                     {{ $order->customer->name ?? ($order->is_walk_in ? 'Walk-in Customer' : 'Umum') }}
+                                </td>
+                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
+                                    <ul class="list-disc list-inside text-xs space-y-1">
+                                        @forelse($order->items as $item)
+                                            <li><span class="font-bold">{{ $item->qty }}x</span> {{ $item->menu->name ?? 'Menu Dihapus' }}</li>
+                                        @empty
+                                            <li class="text-coffee-muted italic">Tidak ada item</li>
+                                        @endforelse
+                                    </ul>
                                 </td>
                                 <td class="py-4 px-4 border-b border-coffee-border/40">
                                     @if(!$order->table_id)
                                         <select wire:change="assignTable({{ $order->id }}, $event.target.value)" class="bg-black/80 border border-coffee-border rounded-lg px-2.5 py-1 text-xs text-coffee-primary font-semibold focus:outline-none focus:border-coffee-primary cursor-pointer">
                                             <option value="">Pilih Meja</option>
-                                            @foreach($availableTables as $tbl)
+                                            @foreach($availableOnlyTables as $tbl)
                                                 <option value="{{ $tbl->id }}">
-                                                    {{ $tbl->qr_code_ref }} {{ $tbl->status === 'occupied' ? '(Terisi)' : '' }}
+                                                    {{ $tbl->qr_code_ref }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -397,13 +415,13 @@ new class extends Component
                                     <div class="flex justify-end items-center gap-1.5">
                                         @if($order->status === 'pending')
                                             <button wire:click="updateOrderStatus({{ $order->id }}, 'processing')" class="py-1.5 px-3 bg-[#6366f1] text-white rounded font-semibold hover:bg-[#4f46e5] shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Terima</button>
-                                            <button onclick="if(confirm('Batalkan pesanan #{{ $order->id }}?')) { @this.updateOrderStatus({{ $order->id }}, 'cancelled') }" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
+                                            <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
                                         @elseif($order->status === 'processing')
                                             <button wire:click="updateOrderStatus({{ $order->id }}, 'preparing')" class="py-1.5 px-3 bg-[#3b82f6] text-white rounded font-semibold hover:bg-[#2563eb] shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Siapkan</button>
-                                            <button onclick="if(confirm('Batalkan pesanan #{{ $order->id }}?')) { @this.updateOrderStatus({{ $order->id }}, 'cancelled') }" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
+                                            <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
                                         @elseif($order->status === 'preparing')
                                             <button wire:click="updateOrderStatus({{ $order->id }}, 'ready')" class="py-1.5 px-3 bg-coffee-success text-black rounded font-semibold hover:bg-coffee-success/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Siap</button>
-                                            <button onclick="if(confirm('Batalkan pesanan #{{ $order->id }}?')) { @this.updateOrderStatus({{ $order->id }}, 'cancelled') }" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
+                                            <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
                                         @elseif($order->status === 'ready')
                                             <button wire:click="updateOrderStatus({{ $order->id }}, 'completed')" class="py-1.5 px-3 bg-neutral-600 text-white rounded font-semibold hover:bg-neutral-700 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Sajikan</button>
                                         @elseif($order->table_id && $order->table && $order->table->status === 'occupied')
@@ -416,7 +434,7 @@ new class extends Component
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-coffee-muted py-8">Tidak ada data pesanan yang sesuai filter.</td>
+                                <td colspan="8" class="text-center text-coffee-muted py-8">Tidak ada data pesanan yang sesuai filter.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -449,14 +467,24 @@ new class extends Component
                                 <span>Pelanggan:</span>
                                 <span class="font-semibold text-coffee-text">{{ $order->customer->name ?? ($order->is_walk_in ? 'Walk-in' : 'Umum') }}</span>
                             </div>
+                            <div class="border-t border-coffee-border/10 pt-1.5">
+                                <div class="text-coffee-primary font-bold mb-1 uppercase tracking-wider" style="font-size:10px;">Menu Dipesan:</div>
+                                <ul class="list-disc list-inside space-y-0.5">
+                                    @forelse($order->items as $item)
+                                        <li><span class="font-bold text-coffee-text">{{ $item->qty }}x</span> {{ $item->menu->name ?? 'Menu Dihapus' }}</li>
+                                    @empty
+                                        <li class="italic text-coffee-muted">Tidak ada item</li>
+                                    @endforelse
+                                </ul>
+                            </div>
                             <div class="flex justify-between items-center">
                                 <span>Meja:</span>
                                 @if(!$order->table_id)
                                     <select wire:change="assignTable({{ $order->id }}, $event.target.value)" class="bg-black border border-coffee-border rounded px-2 py-0.5 text-xs text-coffee-primary font-semibold focus:outline-none focus:border-coffee-primary cursor-pointer">
                                         <option value="">Pilih Meja</option>
-                                        @foreach($availableTables as $tbl)
+                                        @foreach($availableOnlyTables as $tbl)
                                             <option value="{{ $tbl->id }}">
-                                                {{ $tbl->qr_code_ref }} {{ $tbl->status === 'occupied' ? '(Terisi)' : '' }}
+                                                {{ $tbl->qr_code_ref }} (Cap: {{ $tbl->capacity }})
                                             </option>
                                         @endforeach
                                     </select>
@@ -477,13 +505,13 @@ new class extends Component
                         <div class="flex justify-end flex-wrap gap-1.5 mt-1">
                             @if($order->status === 'pending')
                                 <button wire:click="updateOrderStatus({{ $order->id }}, 'processing')" class="py-1.5 px-3 bg-[#6366f1] text-white rounded font-semibold hover:bg-[#4f46e5] shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Terima</button>
-                                <button onclick="if(confirm('Batalkan pesanan #{{ $order->id }}?')) { @this.updateOrderStatus({{ $order->id }}, 'cancelled') }" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
+                                <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
                             @elseif($order->status === 'processing')
                                 <button wire:click="updateOrderStatus({{ $order->id }}, 'preparing')" class="py-1.5 px-3 bg-[#3b82f6] text-white rounded font-semibold hover:bg-[#2563eb] shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Siapkan</button>
-                                <button onclick="if(confirm('Batalkan pesanan #{{ $order->id }}?')) { @this.updateOrderStatus({{ $order->id }}, 'cancelled') }" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
+                                <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
                             @elseif($order->status === 'preparing')
                                 <button wire:click="updateOrderStatus({{ $order->id }}, 'ready')" class="py-1.5 px-3 bg-coffee-success text-black rounded font-semibold hover:bg-coffee-success/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Siap</button>
-                                <button onclick="if(confirm('Batalkan pesanan #{{ $order->id }}?')) { @this.updateOrderStatus({{ $order->id }}, 'cancelled') }" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
+                                <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
                             @elseif($order->status === 'ready')
                                 <button wire:click="updateOrderStatus({{ $order->id }}, 'completed')" class="py-1.5 px-3 bg-neutral-600 text-white rounded font-semibold hover:bg-neutral-700 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Sajikan</button>
                             @elseif($order->table_id && $order->table && $order->table->status === 'occupied')

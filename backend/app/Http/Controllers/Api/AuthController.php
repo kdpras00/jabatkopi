@@ -107,6 +107,14 @@ class AuthController extends Controller
         if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
         $user = \App\Models\User::find($customerId);
 
+        $request->validate([
+            'old_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ], [
+            'new_password.min' => 'Password baru minimal 8 karakter.',
+            'new_password.confirmed' => 'Konfirmasi password baru tidak cocok.',
+        ]);
+
         if (!Hash::check($request->old_password, $user->password)) {
             return response()->json(['message' => 'Password lama Anda tidak sesuai.'], 400);
         }

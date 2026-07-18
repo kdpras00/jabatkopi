@@ -95,6 +95,7 @@ class ReservationController extends Controller
         ]);
 
         $reservation = DB::table('reservations')->where('id', $id)->first();
+        event(new \App\Events\ReservationCreated());
         return response()->json(['status' => 201, 'message' => 'Reservation created', 'data' => $reservation]);
     }
 
@@ -119,10 +120,16 @@ class ReservationController extends Controller
 
     public function cancel($id)
     {
+        $reservation = DB::table('reservations')->where('id', $id)->first();
+        if ($reservation && $reservation->table_id) {
+            DB::table('tables')->where('id', $reservation->table_id)->update(['status' => 'available']);
+        }
+
         DB::table('reservations')->where('id', $id)->update([
             'status' => 'cancelled',
             'updated_at' => now(),
         ]);
+        event(new \App\Events\ReservationCreated());
         return response()->json(['status' => 200, 'message' => 'Reservation cancelled']);
     }
 

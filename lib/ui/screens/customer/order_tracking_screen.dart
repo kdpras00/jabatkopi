@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/network/api_client.dart';
@@ -211,7 +212,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                             children: [
                               const Text('Total Pembayaran', style: TextStyle(color: Colors.white54, fontSize: 16)),
                               Text(
-                                'Rp ${_order!.totalAmount.toInt()}',
+                                'Rp ${NumberFormat('#,###', 'id_ID').format(_order!.totalAmount.toInt())}',
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppColors.caramelGold),
                               ),
                             ],

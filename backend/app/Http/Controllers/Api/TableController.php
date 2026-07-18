@@ -16,16 +16,17 @@ class TableController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'number' => 'required|integer',
+            'number' => 'required|integer|unique:tables,number,NULL,id,deleted_at,NULL',
             'capacity' => 'required|integer|min:1',
         ]);
 
         $id = DB::table('tables')->insertGetId([
-            'number' => $request->number,
-            'capacity' => $request->capacity,
-            'status' => $request->status ?? 'available',
-            'created_at' => now(),
-            'updated_at' => now(),
+            'number'      => $request->number,
+            'qr_code_ref' => 'MEJA-' . str_pad($request->number, 2, '0', STR_PAD_LEFT),
+            'capacity'    => $request->capacity,
+            'status'      => $request->status ?? 'available',
+            'created_at'  => now(),
+            'updated_at'  => now(),
         ]);
         $table = DB::table('tables')->where('id', $id)->first();
         return response()->json(['status' => 201, 'message' => 'Table created', 'data' => $table]);
@@ -34,7 +35,7 @@ class TableController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'number' => 'required|integer',
+            'number' => 'required|integer|unique:tables,number,' . $id . ',id,deleted_at,NULL',
             'capacity' => 'required|integer|min:1',
         ]);
 
@@ -50,6 +51,10 @@ class TableController extends Controller
 
     public function destroy($id)
     {
+        $table = DB::table('tables')->where('id', $id)->first();
+        if ($table && $table->status !== 'available') {
+            return response()->json(['message' => 'Meja sedang terpakai, tidak dapat dihapus.'], 400);
+        }
         DB::table('tables')->where('id', $id)->update(['deleted_at' => now()]);
         return response()->json(['status' => 200, 'message' => 'Table deleted']);
     }

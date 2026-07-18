@@ -8,8 +8,11 @@ use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\ReservationController;
 
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/register', [AuthController::class, 'register']);
+// Rate-limited: max 10 requests per menit per IP untuk mencegah brute-force & spam
+Route::middleware(['throttle:10,1'])->group(function () {
+    Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/register', [AuthController::class, 'register']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
@@ -36,15 +39,15 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
-// --- PONYTAIL: MISSING ENDPOINTS FIX ---
-// Orders
-Route::get('/orders/table/{tableId}', [OrderController::class, 'byTable']);
-Route::get('/orders/{id}/details', [OrderController::class, 'details']);
-Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
-Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+// --- ORDER ENDPOINTS (Auth Protected) ---
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/orders/table/{tableId}', [OrderController::class, 'byTable']);
+    Route::get('/orders/{id}/details', [OrderController::class, 'details']);
+    Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+});
 
-// Reservations
-// Tables
+// Tables (public read)
 Route::get('/tables/available', [TableController::class, 'available']);
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
@@ -66,10 +69,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::put('/admin/reservations/{id}/status', [ReservationController::class, 'updateStatus']);
     Route::put('/admin/reservations/{id}/arrive', function($id) {
         DB::table('reservations')->where('id', $id)->update(['status' => 'checked_in']);
+        event(new \App\Events\ReservationCreated());
         return response()->json(['status' => 200]);
     });
     Route::put('/admin/reservations/{id}/complete', function($id) {
         DB::table('reservations')->where('id', $id)->update(['status' => 'completed']);
+        event(new \App\Events\ReservationCreated());
         return response()->json(['status' => 200]);
     });
     

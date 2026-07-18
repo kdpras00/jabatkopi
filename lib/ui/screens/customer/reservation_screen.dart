@@ -30,15 +30,6 @@ class _CustomerReservationScreenState extends State<CustomerReservationScreen> {
   void initState() {
     super.initState();
     _reservationRepository = ReservationRepository(apiClient: ApiClient());
-    _initNotifications();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  Future<void> _initNotifications() async {
   }
 
   void _submitReservation() async {

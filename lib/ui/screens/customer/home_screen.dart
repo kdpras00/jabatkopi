@@ -602,7 +602,10 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                   title: 'Belum Ada Reservasi',
                   description: 'Meja favoritmu menanti. Buat reservasi meja sekarang juga!',
                 )
-              : ListView.builder(
+              : RefreshIndicator(
+                  onRefresh: _fetchReservations,
+                  color: Colors.blue,
+                  child: ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _reservations.length,
                   itemBuilder: (context, index) {
@@ -732,6 +735,7 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                     );
                   },
                 ),
+              ),
     );
   }
 }
