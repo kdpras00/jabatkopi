@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/cart_provider.dart';
@@ -103,7 +104,7 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
                                   Text(item.menu.category,
                                       style: const TextStyle(color: Colors.white54, fontSize: 12)),
                                   const SizedBox(height: 8),
-                                  Text('Rp ${item.menu.price.toInt()}',
+                                  Text('Rp ${NumberFormat('#,###', 'id_ID').format(item.menu.price.toInt())}',
                                       style: const TextStyle(color: AppColors.caramelGold, fontWeight: FontWeight.bold)),
                                 ],
                               ),
@@ -152,7 +153,7 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Subtotal', style: TextStyle(color: Colors.white70)),
-                        Text('Rp ${cartProvider.subtotal.toInt()}',
+                        Text('Rp ${NumberFormat('#,###', 'id_ID').format(cartProvider.subtotal.toInt())}',
                             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                       ],
                     ),
@@ -160,8 +161,8 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Pajak (10%)', style: TextStyle(color: Colors.white70)),
-                        Text('Rp ${cartProvider.tax.toInt()}',
+                        const Text('PPN (10%)', style: TextStyle(color: Colors.white70)),
+                        Text('Rp ${NumberFormat('#,###', 'id_ID').format(cartProvider.tax.toInt())}',
                             style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                       ],
                     ),
@@ -170,7 +171,7 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Total', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('Rp ${cartProvider.totalAmount.toInt()}',
+                        Text('Rp ${NumberFormat('#,###', 'id_ID').format(cartProvider.totalAmount.toInt())}',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.caramelGold)),
                       ],
                     ),
@@ -236,9 +237,9 @@ class _CustomerCartScreenState extends State<CustomerCartScreen> {
                         }
                       },
                     ),
-                    SafeArea(
+                    const SafeArea(
                       top: false,
-                      child: const SizedBox(height: 16),
+                      child: SizedBox(height: 16),
                     ),
                   ],
                 ),

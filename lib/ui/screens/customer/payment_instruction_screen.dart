@@ -236,14 +236,16 @@ class _PaymentInstructionScreenState extends State<PaymentInstructionScreen> {
     final qrUrl = _currentDetails['qr_url'] as String?;
     final deeplinkUrl = _currentDetails['deeplink_url'] as String?;
 
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderId: widget.orderId)),
-          (route) => route.isFirst,
-        );
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderId: widget.orderId)),
+            (route) => route.isFirst,
+          );
+        }
       },
       child: Scaffold(
         appBar: AppBar(

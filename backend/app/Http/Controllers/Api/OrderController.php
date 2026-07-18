@@ -46,10 +46,13 @@ class OrderController extends Controller
                 
                 $processedItems[] = [
                     'menu_id' => $item['menu_id'],
-                    'qty' => $item['qty'],
-                    'subtotal' => $subtotal,
+                    'qty'     => $item['qty'],
+                    'subtotal' => $subtotal, // subtotal sebelum pajak (per item)
                 ];
             }
+
+            // Tambahkan PPN 10% ke total keseluruhan
+            $totalAmount = round($totalAmount * 1.10, 2);
 
             // Wrap all database operations in a transaction
             $orderId = DB::transaction(function () use ($customerId, $tableId, $paymentMethod, $processedItems, $totalAmount) {

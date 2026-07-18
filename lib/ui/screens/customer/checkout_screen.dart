@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/providers/cart_provider.dart';
@@ -361,7 +362,7 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
                         style: TextStyle(color: AppColors.softCream, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'Rp ${widget.totalAmount.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                        'Rp ${NumberFormat('#,###', 'id_ID').format(widget.totalAmount.toInt())}',
                         style: const TextStyle(
                           color: AppColors.softCream,
                           fontSize: 18,
