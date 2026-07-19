@@ -8,6 +8,7 @@ import '../../../core/network/api_client.dart';
 import '../../widgets/jk_glass_card.dart';
 import '../../widgets/jk_primary_button.dart';
 import 'payment_instruction_screen.dart';
+import 'order_tracking_screen.dart';
 
 class CustomerCheckoutScreen extends StatefulWidget {
   final int? tableId;
@@ -148,18 +149,27 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       }
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PaymentInstructionScreen(
-              orderId: orderId,
-              paymentMethod: _selectedMethod!,
-              paymentDetails: paymentDetails,
-              totalAmount: widget.totalAmount,
-              snapUrl: orderData['snap_redirect_url'] as String?,
+        if (_selectedMethod == 'cash') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OrderTrackingScreen(orderId: orderId),
             ),
-          ),
-        );
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PaymentInstructionScreen(
+                orderId: orderId,
+                paymentMethod: _selectedMethod!,
+                paymentDetails: paymentDetails,
+                totalAmount: widget.totalAmount,
+                snapUrl: orderData['snap_redirect_url'] as String?,
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

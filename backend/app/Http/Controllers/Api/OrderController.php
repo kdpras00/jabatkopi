@@ -203,6 +203,11 @@ class OrderController extends Controller
                 if ($response->successful()) {
                     $resData = $response->json();
                     
+                    $transactionStatus = $resData['transaction_status'] ?? 'pending';
+                    if (in_array($transactionStatus, ['deny', 'cancel', 'expire'])) {
+                        throw new \Exception('Payment was denied by Midtrans: ' . ($resData['status_message'] ?? ''));
+                    }
+
                     if (isset($resData['va_numbers'][0]['va_number'])) {
                         $paymentDetails['va_number'] = $resData['va_numbers'][0]['va_number'];
                         $paymentDetails['bank'] = $resData['va_numbers'][0]['bank'];
