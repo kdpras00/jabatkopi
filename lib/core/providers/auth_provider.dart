@@ -43,10 +43,10 @@ class AuthProvider with ChangeNotifier {
       }
       return false;
     } catch (e) {
-      debugPrint('Error restoring session: $e');
-      try {
-        await _storage.deleteAll();
-      } catch (_) {}
+      // PENTING: Jangan hapus token saat error! Error bisa disebabkan koneksi
+      // buruk atau masalah sementara — token mungkin masih valid.
+      // Token hanya dihapus saat server mengkonfirmasi 401 (lihat api_client.dart).
+      debugPrint('[AuthProvider] Error restoring session (token TIDAK dihapus): $e');
       _isAuthenticated = false;
       notifyListeners();
       return false;
@@ -84,6 +84,13 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       rethrow;
     }
+  }
+
+  /// Dipanggil oleh ApiClient saat server mengembalikan 401 Unauthorized.
+  /// Ini satu-satunya cara yang sah untuk menghapus sesi secara paksa.
+  Future<void> forceLogout() async {
+    debugPrint('[AuthProvider] forceLogout dipanggil — token server tidak valid (401).');
+    await logout();
   }
 
   Future<void> logout() async {
