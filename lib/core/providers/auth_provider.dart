@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../core/network/api_client.dart';
 
 class AuthProvider with ChangeNotifier {
   final ApiClient _apiClient = ApiClient();
-  final AuthRepository _authRepository = AuthRepository(apiClient: ApiClient());
+  late final AuthRepository _authRepository = AuthRepository(apiClient: _apiClient);
 
   FlutterSecureStorage get _storage => _apiClient.secureStorage;
 
@@ -23,6 +24,17 @@ class AuthProvider with ChangeNotifier {
 
   AuthProvider();
 
+  Future<void> _syncFcmToken() async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        await _authRepository.updateFcmToken(fcmToken);
+      }
+    } catch (e) {
+      debugPrint('[AuthProvider] Failed to sync FCM token: $e');
+    }
+  }
+
   /// Membaca session yang tersimpan dari secure storage.
   /// Mengembalikan [true] jika session customer valid ditemukan, [false] jika tidak.
   Future<bool> tryRestoreSession() async {
@@ -39,6 +51,10 @@ class AuthProvider with ChangeNotifier {
         _username = savedUsername ?? 'User';
         _userId = int.tryParse(savedUserId ?? '');
         notifyListeners();
+        
+        // Sinkronisasi FCM token setiap kali buka app
+        _syncFcmToken();
+        
         return true;
       }
       return false;
@@ -76,6 +92,9 @@ class AuthProvider with ChangeNotifier {
       await _storage.write(key: 'username', value: _username!);
       await _storage.write(key: 'user_id', value: _userId!.toString());
       
+      // Sinkronisasi FCM token setiap kali login berhasil
+      _syncFcmToken();
+
       _isLoading = false;
       notifyListeners();
       return true;

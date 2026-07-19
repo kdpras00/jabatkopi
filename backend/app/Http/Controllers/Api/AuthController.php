@@ -58,6 +58,21 @@ class AuthController extends Controller
         return response()->json(['status' => 201, 'message' => 'Pendaftaran berhasil!']);
     }
 
+    public function updateFcmToken(Request $request)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string',
+        ]);
+
+        $user = $request->user();
+        $user->update(['fcm_token' => $request->fcm_token]);
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'FCM Token berhasil diupdate',
+        ]);
+    }
+
     public function profile(Request $request)
     {
         $customerId = auth()->id();

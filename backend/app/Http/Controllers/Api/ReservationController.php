@@ -33,8 +33,10 @@ class ReservationController extends Controller
     {
         $request->validate([
             'table_id' => 'required|integer',
-            'reservation_date' => 'required|date',
+            'reservation_date' => 'required|date|after_or_equal:-1 hour',
             'guest_count' => 'required|integer|min:1',
+        ], [
+            'reservation_date.after_or_equal' => 'Tanggal dan waktu reservasi tidak boleh di masa lalu.',
         ]);
 
         $customerId = auth()->id();
@@ -108,12 +110,39 @@ class ReservationController extends Controller
         $status = $request->status;
         $staff = $request->header('X-Username', 'BARISTA');
         
+        $reservation = DB::table('reservations')->where('id', $id)->first();
+        if (!$reservation) return response()->json(['message' => 'Reservation not found'], 404);
+
         DB::table('reservations')->where('id', $id)->update([
             'status' => $status,
             'verified_by' => $staff,
             'verified_at' => now(),
             'updated_at' => now(),
         ]);
+
+        // Send FCM Notification
+        $user = DB::table('users')->where('id', $reservation->customer_id)->first();
+        if ($user && $user->fcm_token) {
+            $title = '';
+            $body = '';
+
+            if ($status === 'confirmed') {
+                $title = 'Reservasi Disetujui \u{2705}';
+                $body = "Reservasi Meja Anda untuk tanggal {$reservation->reservation_date} telah dikonfirmasi!";
+            } elseif ($status === 'cancelled') {
+                $title = 'Reservasi Dibatalkan \u{274C}';
+                $body = "Mohon maaf, reservasi Anda untuk tanggal {$reservation->reservation_date} dibatalkan.";
+            }
+
+            if ($title && $body) {
+                (new \App\Services\FcmService())->sendNotification(
+                    $user->fcm_token,
+                    $title,
+                    $body,
+                    ['type' => 'reservation_status_update', 'reservation_id' => (string) $reservation->id, 'status' => $status]
+                );
+            }
+        }
 
         return response()->json(['status' => 200, 'message' => 'Reservation status updated']);
     }
@@ -122,7 +151,7 @@ class ReservationController extends Controller
     {
         $reservation = DB::table('reservations')->where('id', $id)->first();
         if ($reservation && $reservation->table_id) {
-            DB::table('tables')->where('id', $reservation->table_id)->update(['status' => 'available']);
+            \App\Models\Table::syncStatus($reservation->table_id);
         }
 
         DB::table('reservations')->where('id', $id)->update([

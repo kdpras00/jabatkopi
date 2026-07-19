@@ -45,23 +45,8 @@ class PaymentController extends Controller
 
         if ($transactionStatus === 'settlement' || $transactionStatus === 'capture') {
             $newStatus = 'processing';
-            if ($order->table_id) {
-                Table::find($order->table_id)->update(['status' => 'occupied']);
-            }
         } elseif (in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
             $newStatus = 'cancelled';
-            if ($oldStatus !== 'cancelled') {
-                // ponytail: bulk update instead of N+1 queries
-                DB::table('menus')
-                    ->joinSub(
-                        DB::table('order_items')->where('order_id', $order->id)->select('menu_id', 'qty'),
-                        'oi', 'oi.menu_id', '=', 'menus.id'
-                    )
-                    ->update(['menus.stock' => DB::raw('menus.stock + oi.qty')]);
-            }
-            if ($order->table_id) {
-                Table::find($order->table_id)->update(['status' => 'available']);
-            }
         }
 
         if ($newStatus !== $oldStatus) {
@@ -69,6 +54,23 @@ class PaymentController extends Controller
                 'status' => $newStatus,
                 'payment_method' => $order->payment_method ?: strtoupper(str_replace('_', ' ', $paymentType)),
             ]);
+
+            // Sync after status is updated in DB
+            if ($newStatus === 'processing' && $order->table_id) {
+                Table::find($order->table_id)->update(['status' => 'occupied']);
+            } elseif ($newStatus === 'cancelled') {
+                if ($oldStatus !== 'cancelled') {
+                    DB::table('menus')
+                        ->joinSub(
+                            DB::table('order_items')->where('order_id', $order->id)->select('menu_id', 'qty'),
+                            'oi', 'oi.menu_id', '=', 'menus.id'
+                        )
+                        ->update(['menus.stock' => DB::raw('menus.stock + oi.qty')]);
+                }
+                if ($order->table_id) {
+                    Table::syncStatus($order->table_id);
+                }
+            }
 
             event(new \App\Events\OrderCreated());
         }

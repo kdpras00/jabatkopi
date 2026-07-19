@@ -6,13 +6,26 @@ class OrderRepository {
 
   OrderRepository({required this.apiClient});
 
-  Future<Map<String, dynamic>> createOrder(int tableId, String paymentMethod, List<Map<String, dynamic>> items) async {
+  Future<Map<String, dynamic>> createOrder(
+    int? tableId,
+    String paymentMethod,
+    List<Map<String, dynamic>> items, {
+    String orderType = 'dine_in',
+    String? pickupTime,
+  }) async {
     try {
-      final response = await apiClient.post('/orders', {
-        'table_id': tableId,
+      final body = <String, dynamic>{
         'payment_method': paymentMethod,
         'items': items,
-      });
+        'order_type': orderType,
+      };
+      if (tableId != null && tableId != 0) {
+        body['table_id'] = tableId;
+      }
+      if (orderType == 'pickup' && pickupTime != null) {
+        body['pickup_time'] = pickupTime;
+      }
+      final response = await apiClient.post('/orders', body);
       return response['data'];
     } catch (e) {
       throw Exception('Failed to create order: $e');

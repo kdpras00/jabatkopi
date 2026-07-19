@@ -13,11 +13,13 @@ class OrderController extends Controller
     public function create(Request $request)
     {
         $request->validate([
-            'table_id' => 'required|integer',
-            'payment_method' => 'required|string',
-            'items' => 'required|array|min:1',
+            'table_id'      => 'required_if:order_type,dine_in|nullable|integer',
+            'payment_method'=> 'required|string',
+            'items'         => 'required|array|min:1',
             'items.*.menu_id' => 'required|integer',
-            'items.*.qty' => 'required|integer|min:1',
+            'items.*.qty'   => 'required|integer|min:1',
+            'order_type'    => 'nullable|string|in:dine_in,pickup,takeaway',
+            'pickup_time'   => 'required_if:order_type,pickup|nullable|string|max:10',
         ]);
 
         $customerId = auth()->id();
@@ -27,6 +29,8 @@ class OrderController extends Controller
             $tableId = $request->table_id;
             $paymentMethod = $request->payment_method;
             $items = $request->items;
+            $orderType = $request->order_type ?? 'dine_in';
+            $pickupTime = $request->pickup_time;
 
             $totalAmount = 0;
             $processedItems = [];
@@ -37,8 +41,14 @@ class OrderController extends Controller
 
             foreach ($items as $item) {
                 $menu = $menus->get($item['menu_id']);
-                if (!$menu || $menu->stock < $item['qty']) {
-                    throw new \Exception('Stok tidak cukup atau menu tidak ditemukan: ' . ($menu->name ?? 'Unknown'));
+                if (!$menu || $menu->deleted_at !== null) {
+                    throw new \Exception('Menu tidak ditemukan atau sudah dihapus: ' . ($menu->name ?? 'Unknown'));
+                }
+                if (!$menu->is_available) {
+                    throw new \Exception('Menu tidak tersedia saat ini: ' . $menu->name);
+                }
+                if ($menu->stock < $item['qty']) {
+                    throw new \Exception('Stok tidak cukup untuk menu: ' . $menu->name);
                 }
                 
                 $subtotal = $menu->price * $item['qty'];
@@ -54,32 +64,54 @@ class OrderController extends Controller
             // Tambahkan PPN 10% ke total keseluruhan
             $totalAmount = round($totalAmount * 1.10, 2);
 
+            // Cek Tabrakan Meja (Collision Prevention)
+            if (!empty($tableId)) {
+                $table = DB::table('tables')->where('id', $tableId)->first();
+                if (!$table) {
+                    throw new \Exception('Meja tidak ditemukan.');
+                }
+                if ($table->status === 'occupied') {
+                    // Hanya izinkan jika user ini yang sedang menempati meja (Pesanan Tambahan)
+                    $hasActiveOrder = DB::table('orders')
+                        ->where('table_id', $tableId)
+                        ->where('customer_id', $customerId)
+                        ->whereIn('status', ['pending', 'processing', 'preparing', 'ready'])
+                        ->exists();
+                        
+                    if (!$hasActiveOrder) {
+                        throw new \Exception('Meja ini sudah terisi oleh pelanggan lain.');
+                    }
+                }
+            }
+
             // Wrap all database operations in a transaction
-            $orderId = DB::transaction(function () use ($customerId, $tableId, $paymentMethod, $processedItems, $totalAmount) {
+            $orderId = DB::transaction(function () use ($customerId, $tableId, $paymentMethod, $processedItems, $totalAmount, $orderType, $pickupTime) {
                 // Potong stok
                 foreach ($processedItems as $item) {
                     DB::table('menus')->where('id', $item['menu_id'])->decrement('stock', $item['qty']);
                 }
 
                 $id = DB::table('orders')->insertGetId([
-                    'customer_id' => $customerId,
-                    'table_id' => $tableId == 0 ? null : $tableId,
-                    'is_walk_in' => true,
+                    'customer_id'    => $customerId,
+                    'table_id'       => ($tableId == 0 || $tableId === null) ? null : $tableId,
+                    'is_walk_in'     => true,
                     'reservation_id' => null,
-                    'total_amount' => $totalAmount,
-                    'status' => 'pending',
+                    'total_amount'   => $totalAmount,
+                    'status'         => 'pending',
                     'payment_method' => $paymentMethod,
-                    'staff_name' => 'SISTEM',
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'staff_name'     => 'SISTEM',
+                    'order_type'     => $orderType,
+                    'pickup_time'    => ($orderType === 'pickup') ? $pickupTime : null,
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
                 ]);
 
                 foreach ($processedItems as $item) {
                     DB::table('order_items')->insert([
-                        'order_id' => $id,
-                        'menu_id' => $item['menu_id'],
-                        'qty' => $item['qty'],
-                        'subtotal' => $item['subtotal'],
+                        'order_id'   => $id,
+                        'menu_id'    => $item['menu_id'],
+                        'qty'        => $item['qty'],
+                        'subtotal'   => $item['subtotal'],
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
@@ -210,6 +242,11 @@ class OrderController extends Controller
                 ]);
             }
 
+            // 5. Sinkronisasi status meja otomatis (misal jadi occupied)
+            if (!empty($tableId)) {
+                \App\Models\Table::syncStatus($tableId);
+            }
+
             event(new \App\Events\OrderCreated());
 
             return response()->json([
@@ -279,13 +316,13 @@ class OrderController extends Controller
     {
         $customerId = auth()->id();
         if (!$customerId) return response()->json(['message' => 'Unauthorized'], 401);
-        $orders = DB::table('orders')->where('customer_id', $customerId)->whereIn('status', ['pending', 'processing', 'ready'])->get();
+        $orders = DB::table('orders')->where('customer_id', $customerId)->whereIn('status', ['pending', 'processing', 'preparing', 'ready'])->get();
         return response()->json(['status' => 200, 'data' => $orders]);
     }
 
     public function byTable($tableId)
     {
-        $orders = DB::table('orders')->where('table_id', $tableId)->whereIn('status', ['pending', 'processing'])->get();
+        $orders = DB::table('orders')->where('table_id', $tableId)->whereIn('status', ['pending', 'processing', 'preparing', 'ready'])->get();
         return response()->json(['status' => 200, 'data' => $orders]);
     }
 
@@ -367,17 +404,18 @@ class OrderController extends Controller
 
                     if ($transactionStatus === 'settlement' || $transactionStatus === 'capture') {
                         DB::table('orders')->where('id', $id)->update([
-                            'status' => 'processing',
+                            'status'         => 'processing',
                             'payment_method' => strtoupper(str_replace('_', ' ', $paymentType)),
-                            'updated_at' => now(),
+                            'updated_at'     => now(),
                         ]);
-                        
+
+                        // Sinkronisasi status meja secara otomatis
                         if ($order->table_id) {
-                            DB::table('tables')->where('id', $order->table_id)->update(['status' => 'occupied']);
+                            \App\Models\Table::syncStatus($order->table_id);
                         }
 
                         event(new \App\Events\OrderCreated());
-                        
+
                         // Refresh order record
                         $order = DB::table('orders')
                             ->select('orders.*', 'users.name as customer_name', 'users.email as customer_email')
@@ -405,7 +443,65 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate(['status' => 'required|string|in:pending,processing,preparing,ready,completed,cancelled']);
-        DB::table('orders')->where('id', $id)->update(['status' => $request->status, 'updated_at' => now()]);
+        
+        $status = $request->status;
+        $order = DB::table('orders')->where('id', $id)->first();
+        if (!$order) return response()->json(['message' => 'Order not found'], 404);
+
+        // Filter 1: Cegah Spam dari klik berulang (Status tidak berubah)
+        if ($order->status === $status) {
+            return response()->json(['status' => 200, 'message' => 'Status tidak berubah (skip notifikasi)']);
+        }
+
+        DB::table('orders')->where('id', $id)->update(['status' => $status, 'updated_at' => now()]);
+
+        // Jika order selesai atau dibatalkan, sinkronisasi status meja
+        if (in_array($status, ['completed', 'cancelled']) && $order->table_id) {
+            \App\Models\Table::syncStatus($order->table_id);
+        }
+
+        // Send FCM Notification
+        $user = DB::table('users')->where('id', $order->customer_id)->first();
+        if ($user && $user->fcm_token) {
+            $title = '';
+            $body = '';
+
+            // Filter 2: Sesuaikan tingkat urgensi berdasarkan Tipe Pesanan
+            // Dine In tidak perlu terlalu banyak notif karena pelanggan sudah duduk di tempat.
+            // Pickup / Takeaway sangat butuh notifikasi "Ready".
+            
+            if ($status === 'processing') {
+                if ($order->order_type !== 'dine_in') { // Hanya untuk Pickup/Takeaway
+                    $title = 'Pesanan Diproses \u{2615}';
+                    $body = "Pesananmu (#{$order->id}) sedang diracik oleh barista kami!";
+                }
+            } elseif ($status === 'ready') {
+                $title = 'Pesanan Siap! \u{1F6CD}';
+                if ($order->order_type === 'dine_in') {
+                    $body = "Yay! Pesananmu (#{$order->id}) sedang diantar ke mejamu.";
+                } else {
+                    $body = "Yay! Pesananmu (#{$order->id}) sudah siap diambil di kasir.";
+                }
+            } elseif ($status === 'completed' && $order->order_type !== 'dine_in') {
+                // Selesai untuk Dine In biasanya kasir yang klik pas pelanggan bayar/pergi, tidak perlu dispam
+                $title = 'Pesanan Selesai \u{2705}';
+                $body = "Terima kasih sudah menikmati sajian Jabat Kopi!";
+            } elseif ($status === 'cancelled') {
+                $title = 'Pesanan Dibatalkan \u{274C}';
+                $body = "Pesananmu (#{$order->id}) telah dibatalkan oleh pihak kafe.";
+            }
+
+            if ($title && $body) {
+                (new \App\Services\FcmService())->sendNotification(
+                    $user->fcm_token,
+                    $title,
+                    $body,
+                    ['type' => 'order_status_update', 'order_id' => (string) $order->id, 'status' => $status]
+                );
+            }
+        }
+
+        event(new \App\Events\OrderCreated());
         return response()->json(['status' => 200, 'message' => 'Status updated']);
     }
 
@@ -431,12 +527,14 @@ class OrderController extends Controller
             )
             ->update(['menus.stock' => DB::raw('menus.stock + oi.qty')]);
 
-        // 2. Bebaskan meja
+        // 2. Update status order
+        $order->update(['status' => 'cancelled', 'updated_at' => now()]);
+
+        // 3. Sinkronisasi status meja otomatis
         if ($order->table_id) {
-            Table::find($order->table_id)?->update(['status' => 'available']);
+            \App\Models\Table::syncStatus($order->table_id);
         }
 
-        $order->update(['status' => 'cancelled', 'updated_at' => now()]);
         event(new \App\Events\OrderCreated());
 
         return response()->json(['status' => 200, 'message' => 'Pesanan berhasil dibatalkan']);

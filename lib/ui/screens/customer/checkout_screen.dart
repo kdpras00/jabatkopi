@@ -10,15 +10,19 @@ import '../../widgets/jk_primary_button.dart';
 import 'payment_instruction_screen.dart';
 
 class CustomerCheckoutScreen extends StatefulWidget {
-  final int tableId;
+  final int? tableId;
   final List<Map<String, dynamic>> items;
   final double totalAmount;
+  final String orderType;
+  final String? pickupTime;
 
   const CustomerCheckoutScreen({
     super.key,
     required this.tableId,
     required this.items,
     required this.totalAmount,
+    this.orderType = 'dine_in',
+    this.pickupTime,
   });
 
   @override
@@ -127,9 +131,12 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
         widget.tableId,
         _selectedMethod!,
         widget.items,
+        orderType: widget.orderType,
+        pickupTime: widget.pickupTime,
       );
 
-      final orderId = (orderData['order'] as Map?)?['id'] as int? ?? 0;
+      final orderMap = orderData['order'] as Map?;
+      final orderId = int.tryParse(orderMap?['id']?.toString() ?? '0') ?? 0;
       final rawPaymentDetails = orderData['payment_details'];
       final paymentDetails = (rawPaymentDetails is Map)
           ? Map<String, dynamic>.from(rawPaymentDetails)
@@ -340,6 +347,25 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Tampilkan info tipe pesanan
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Tipe Pesanan',
+                        style: TextStyle(color: Colors.white54, fontSize: 14),
+                      ),
+                      Text(
+                        widget.orderType == 'dine_in'
+                            ? '🍽️ Dine In${widget.tableId != null && widget.tableId != 0 ? " (Meja ${widget.tableId})" : ""}'
+                            : widget.orderType == 'pickup'
+                                ? '📦 Pickup${widget.pickupTime != null ? " jam ${widget.pickupTime}" : ""}'
+                                : '🥡 Takeaway',
+                        style: const TextStyle(color: AppColors.caramelGold, fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

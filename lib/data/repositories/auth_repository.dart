@@ -20,4 +20,13 @@ class AuthRepository {
       throw Exception('Login failed: $e');
     }
   }
+  Future<void> updateFcmToken(String fcmToken) async {
+    try {
+      await apiClient.put('/profile/fcm-token', {
+        'fcm_token': fcmToken,
+      });
+    } catch (e) {
+      print('Failed to update FCM token: $e');
+    }
+  }
 }

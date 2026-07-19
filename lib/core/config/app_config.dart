@@ -8,5 +8,5 @@ class AppConfig {
   // 3. GUNA UNTUK HP FISIK (Hubungkan HP & Laptop ke Wi-Fi yang sama, isi dengan IP Lokal Laptop Anda)
   // Cara cek IP lokal macOS di Terminal: ipconfig getifaddr en0
   // Jalankan Laravel dengan: php artisan serve --host=0.0.0.0 --port=8000
-  // static const String laravelBaseUrl = 'http://192.168.1.100:8000';
+  // static const String laravelBaseUrl = 'http://192.168.1.33:8000';
 }

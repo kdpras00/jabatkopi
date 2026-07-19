@@ -39,12 +39,7 @@ new class extends Component
         $order = Order::find($id);
         if ($order) {
             $oldStatus = $order->status;
-            
-            // Validasi: Pastikan meja sudah dipilih sebelum memproses pesanan
-            if ($status !== 'cancelled' && empty($order->table_id)) {
-                $this->dispatch('toast', text: "Gagal: Anda harus memilih nomor meja terlebih dahulu sebelum mengubah status pesanan.", type: 'error');
-                return;
-            }
+            // (Validasi meja dihapus agar pesanan Takeaway bisa diproses)
 
             // Validasi transisi status (Linear/Sekuensial)
             $allowedTransitions = [
@@ -112,8 +107,7 @@ new class extends Component
             if ($table) {
                 $table->update(['status' => 'available']);
             }
-            $order->update(['table_id' => null]);
-            $this->dispatch('toast', text: "Meja berhasil dibebaskan dari Pesanan #{$orderId}.", type: 'success');
+            $this->dispatch('toast', text: "Meja berhasil dibebaskan. Meja kini bisa digunakan pelanggan lain.", type: 'success');
         }
     }
     // --- RESERVATION ACTIONS ---
@@ -142,6 +136,28 @@ new class extends Component
             }
             $reservation->update(['table_id' => null]);
             $this->dispatch('toast', text: "Meja dibebaskan dari Booking JK-RES-{$reservationId}.", type: 'success');
+        }
+    }
+
+    public function confirmReservation(int $id): void
+    {
+        $reservation = Reservation::find($id);
+        if ($reservation && $reservation->status === 'booked') {
+            $reservation->update([
+                'status' => 'confirmed',
+                'updated_at' => now(),
+            ]);
+            // Kirim notifikasi FCM ke customer
+            $user = \App\Models\User::find($reservation->customer_id);
+            if ($user && $user->fcm_token) {
+                (new \App\Services\FcmService())->sendNotification(
+                    $user->fcm_token,
+                    'Reservasi Dikonfirmasi ✅',
+                    "Reservasi Meja Anda untuk tanggal " . \Carbon\Carbon::parse($reservation->reservation_date)->format('d M Y H:i') . " telah dikonfirmasi oleh staf kami!",
+                    ['type' => 'reservation_status_update', 'reservation_id' => (string) $reservation->id, 'status' => 'confirmed']
+                );
+            }
+            $this->dispatch('toast', text: "Reservasi #{$id} berhasil dikonfirmasi!", type: 'success');
         }
     }
 
@@ -278,6 +294,15 @@ new class extends Component
 };
 ?>
 <div>
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
     <!-- OVERVIEW TAB -->
     @if($activeTab === 'overview')
         <div>
@@ -336,108 +361,149 @@ new class extends Component
         <div class="bg-coffee-panel backdrop-blur-md border border-coffee-border rounded-2xl p-8 shadow-2xl">
             <div class="flex justify-between items-center mb-6 max-sm:flex-col max-sm:items-stretch max-sm:gap-4">
                 <!-- Filters -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <button wire:click="$set('orderFilter', 'all')" class="py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer {{ $orderFilter === 'all' ? 'bg-coffee-primary text-black border-transparent' : 'text-coffee-muted border-coffee-border/40 hover:bg-white/5 hover:text-coffee-text' }}">Semua</button>
                     <button wire:click="$set('orderFilter', 'pending')" class="py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer {{ $orderFilter === 'pending' ? 'bg-amber-500 text-black border-transparent' : 'text-coffee-muted border-coffee-border/40 hover:bg-white/5 hover:text-coffee-text' }}">Pending</button>
                     <button wire:click="$set('orderFilter', 'preparing')" class="py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer {{ $orderFilter === 'preparing' ? 'bg-[#3b82f6] text-white border-transparent' : 'text-coffee-muted border-coffee-border/40 hover:bg-white/5 hover:text-coffee-text' }}">Preparing</button>
                     <button wire:click="$set('orderFilter', 'ready')" class="py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer {{ $orderFilter === 'ready' ? 'bg-coffee-success text-black border-transparent' : 'text-coffee-muted border-coffee-border/40 hover:bg-white/5 hover:text-coffee-text' }}">Ready</button>
                     <button wire:click="$set('orderFilter', 'completed')" class="py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer {{ $orderFilter === 'completed' ? 'bg-neutral-700 text-coffee-text border-transparent' : 'text-coffee-muted border-coffee-border/40 hover:bg-white/5 hover:text-coffee-text' }}">Completed</button>
+                    <button wire:click="$set('orderFilter', 'cancelled')" class="py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer {{ $orderFilter === 'cancelled' ? 'bg-red-600 text-white border-transparent' : 'text-coffee-muted border-coffee-border/40 hover:bg-white/5 hover:text-coffee-text' }}">Dibatalkan</button>
                 </div>
             </div>
 
             <!-- Desktop Table View -->
-            <div class="hidden md:block overflow-x-auto w-full">
-                <table class="w-full border-collapse text-left text-sm">
+            <div class="hidden md:block overflow-x-auto w-full no-scrollbar">
+                <table class="w-full border-collapse text-left text-sm table-fixed" style="white-space: nowrap;">
+                    <colgroup>
+                        <col class="w-20">   {{-- ID --}}
+                        <col class="w-36">   {{-- Pelanggan --}}
+                        <col>                {{-- Menu --}}
+                        <col class="w-36">   {{-- Meja --}}
+                        <col class="w-28">   {{-- Total --}}
+                        <col class="w-32">   {{-- Pembayaran --}}
+                        <col class="w-28">   {{-- Status --}}
+                        <col class="w-40">   {{-- Aksi --}}
+                    </colgroup>
                     <thead>
                         <tr>
-                            <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">ID Pesanan</th>
-                            <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Pelanggan</th>
-                            <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Menu Dipesan</th>
-                            <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Nomor Meja</th>
-                            <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Total</th>
-                            <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Pembayaran</th>
-                            <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Status</th>
-                            <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider text-right">Aksi Status</th>
+                            <th class="py-3 px-3 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">ID</th>
+                            <th class="py-3 px-3 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Pelanggan</th>
+                            <th class="py-3 px-3 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Menu</th>
+                            <th class="py-3 px-3 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Meja</th>
+                            <th class="py-3 px-3 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Total</th>
+                            <th class="py-3 px-3 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Bayar</th>
+                            <th class="py-3 px-3 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Status</th>
+                            <th class="py-3 px-3 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($orders as $order)
-                            <tr class="hover:bg-coffee-primary/3">
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-semibold font-mono">#{{ $order->id }}</td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-semibold">
-                                    {{ $order->customer->name ?? ($order->is_walk_in ? 'Walk-in Customer' : 'Umum') }}
+                            @php
+                                $isDone = in_array($order->status, ['completed', 'cancelled']);
+                                $items = $order->items;
+                                $menuSummary = $items->map(fn($i) => $i->qty.'x '.($i->menu->name ?? '?'))->implode(' · ');
+                            @endphp
+                            <tr class="hover:bg-coffee-primary/5 transition-colors {{ $isDone ? 'opacity-40' : '' }}">
+                                {{-- ID --}}
+                                <td class="px-3 py-3 border-b border-coffee-border/30 font-mono font-semibold text-coffee-text text-xs">#{{ $order->id }}</td>
+
+                                {{-- Pelanggan --}}
+                                <td class="px-3 py-3 border-b border-coffee-border/30 text-coffee-text font-semibold truncate max-w-0">
+                                    <span class="block truncate">{{ $order->customer->name ?? ($order->is_walk_in ? 'Walk-in' : 'Umum') }}</span>
                                 </td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
-                                    <ul class="list-disc list-inside text-xs space-y-1">
-                                        @forelse($order->items as $item)
-                                            <li><span class="font-bold">{{ $item->qty }}x</span> {{ $item->menu->name ?? 'Menu Dihapus' }}</li>
+
+                                {{-- Menu --}}
+                                <td class="px-3 py-3 border-b border-coffee-border/30 text-xs">
+                                    <ul class="space-y-1 text-coffee-text">
+                                        @forelse($items as $item)
+                                            <li>- {{ Str::limit($item->menu->name ?? 'Dihapus', 18) }} <span class="font-bold text-coffee-primary">({{ $item->qty }}x)</span></li>
                                         @empty
-                                            <li class="text-coffee-muted italic">Tidak ada item</li>
+                                            <li class="text-coffee-muted italic">-</li>
                                         @endforelse
                                     </ul>
                                 </td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40">
-                                    @if(!$order->table_id)
-                                        <select wire:change="assignTable({{ $order->id }}, $event.target.value)" class="bg-black/80 border border-coffee-border rounded-lg px-2.5 py-1 text-xs text-coffee-primary font-semibold focus:outline-none focus:border-coffee-primary cursor-pointer">
+
+                                {{-- Meja --}}
+                                <td class="px-3 py-3 border-b border-coffee-border/30">
+                                    @if($isDone)
+                                        <span class="text-coffee-muted text-xs">{{ $order->table?->qr_code_ref ? str_replace('JK-TABLE-', 'Meja ', $order->table->qr_code_ref) : '—' }}</span>
+                                    @elseif($order->order_type === 'takeaway')
+                                        <span class="bg-[#1e1b4b] text-[#818cf8] border border-[#3730a3] px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Takeaway</span>
+                                    @elseif($order->order_type === 'pickup')
+                                        <span class="bg-[#422006] text-[#fbbf24] border border-[#92400e] px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Pickup</span>
+                                    @elseif(!$order->table_id)
+                                        <select wire:change="assignTable({{ $order->id }}, $event.target.value)" class="w-full bg-black/80 border border-coffee-border rounded px-2 py-1 text-xs text-coffee-primary font-semibold focus:outline-none cursor-pointer">
                                             <option value="">Pilih Meja</option>
                                             @foreach($availableOnlyTables as $tbl)
-                                                <option value="{{ $tbl->id }}">
-                                                    {{ $tbl->qr_code_ref }}
-                                                </option>
+                                                <option value="{{ $tbl->id }}">{{ str_replace('JK-TABLE-', 'Meja ', $tbl->qr_code_ref) }}</option>
                                             @endforeach
                                         </select>
                                     @else
-                                        <span class="font-bold text-coffee-text">{{ $order->table->qr_code_ref }}</span>
+                                        <span class="font-semibold text-coffee-text text-xs">{{ str_replace('JK-TABLE-', 'Meja ', $order->table->qr_code_ref) }}</span>
                                     @endif
                                 </td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-primary font-bold">
+
+                                {{-- Total --}}
+                                <td class="px-3 py-3 border-b border-coffee-border/30 text-coffee-primary font-bold text-xs whitespace-nowrap">
                                     Rp {{ number_format($order->total_amount, 0, ',', '.') }}
                                 </td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text capitalize">
-                                    {{ $order->payment_method ?? 'Cash' }}
+
+                                {{-- Pembayaran --}}
+                                <td class="px-3 py-3 border-b border-coffee-border/30 text-coffee-text text-xs truncate max-w-0">
+                                    <span class="block truncate">{{ ucwords(str_replace('_', ' ', $order->payment_method ?? 'cash')) }}</span>
                                 </td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40">
+
+                                {{-- Status badge --}}
+                                <td class="px-3 py-3 border-b border-coffee-border/30">
+                                    @php
+                                        $statusMap = [
+                                            'pending'    => ['label' => 'Pending',    'class' => 'text-black', 'bg' => '#f59e0b'],
+                                            'processing' => ['label' => 'Processing', 'class' => 'text-white', 'bg' => '#6366f1'],
+                                            'preparing'  => ['label' => 'Preparing',  'class' => 'text-white', 'bg' => '#3b82f6'],
+                                            'ready'      => ['label' => 'Ready',      'class' => 'bg-coffee-success text-black', 'bg' => ''],
+                                            'completed'  => ['label' => 'Selesai',    'class' => 'bg-neutral-500 text-white', 'bg' => ''],
+                                            'cancelled'  => ['label' => 'Batal',      'class' => 'bg-red-600 text-white', 'bg' => ''],
+                                        ];
+                                        $s = $statusMap[$order->status] ?? ['label' => $order->status, 'class' => 'bg-neutral-700 text-white', 'bg' => ''];
+                                    @endphp
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide {{ $s['class'] }}" @if($s['bg']) style="background-color: {{ $s['bg'] }};" @endif>{{ $s['label'] }}</span>
+                                </td>
+
+                                {{-- Aksi --}}
+                                <td class="px-3 py-3 border-b border-coffee-border/30 text-right">
                                     @if($order->status === 'pending')
-                                        <span class="bg-[#f59e0b] text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Pending</span>
+                                        <div class="flex justify-end gap-1.5">
+                                            <button wire:click="updateOrderStatus({{ $order->id }}, 'processing')" style="background-color: #6366f1;" class="px-3 py-1.5 text-white rounded text-xs font-semibold cursor-pointer">Terima</button>
+                                            <button @click="Swal.fire({title:'Batalkan #{{ $order->id }}?',text:'Tidak bisa diurungkan',icon:'warning',showCancelButton:true,confirmButtonColor:'#ef4444',cancelButtonColor:'#3f3f46',confirmButtonText:'Ya',cancelButtonText:'Tutup',background:'#1c1917',color:'#fff'}).then(r=>{ if(r.isConfirmed) $wire.updateOrderStatus({{ $order->id }},'cancelled') })" class="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 cursor-pointer">Batal</button>
+                                        </div>
                                     @elseif($order->status === 'processing')
-                                        <span class="bg-[#6366f1] text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Processing</span>
+                                        <div class="flex justify-end gap-1.5">
+                                            <button wire:click="updateOrderStatus({{ $order->id }}, 'preparing')" style="background-color: #3b82f6;" class="px-3 py-1.5 text-white rounded text-xs font-semibold cursor-pointer">Siapkan</button>
+                                            <button @click="Swal.fire({title:'Batalkan #{{ $order->id }}?',text:'Tidak bisa diurungkan',icon:'warning',showCancelButton:true,confirmButtonColor:'#ef4444',cancelButtonColor:'#3f3f46',confirmButtonText:'Ya',cancelButtonText:'Tutup',background:'#1c1917',color:'#fff'}).then(r=>{ if(r.isConfirmed) $wire.updateOrderStatus({{ $order->id }},'cancelled') })" class="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 cursor-pointer">Batal</button>
+                                        </div>
                                     @elseif($order->status === 'preparing')
-                                        <span class="bg-[#3b82f6] text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Preparing</span>
+                                        <div class="flex justify-end gap-1.5">
+                                            <button wire:click="updateOrderStatus({{ $order->id }}, 'ready')" class="px-3 py-1.5 bg-coffee-success text-black rounded text-xs font-semibold hover:opacity-80 cursor-pointer">Siap</button>
+                                            <button @click="Swal.fire({title:'Batalkan #{{ $order->id }}?',text:'Tidak bisa diurungkan',icon:'warning',showCancelButton:true,confirmButtonColor:'#ef4444',cancelButtonColor:'#3f3f46',confirmButtonText:'Ya',cancelButtonText:'Tutup',background:'#1c1917',color:'#fff'}).then(r=>{ if(r.isConfirmed) $wire.updateOrderStatus({{ $order->id }},'cancelled') })" class="px-3 py-1.5 bg-red-600 text-white rounded text-xs font-semibold hover:bg-red-700 cursor-pointer">Batal</button>
+                                        </div>
                                     @elseif($order->status === 'ready')
-                                        <span class="bg-coffee-success text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Ready</span>
+                                        <button wire:click="updateOrderStatus({{ $order->id }}, 'completed')" class="px-3 py-1.5 bg-neutral-600 text-white rounded text-xs font-semibold hover:bg-neutral-700 cursor-pointer">{{ $order->order_type === 'dine_in' ? 'Sajikan' : 'Serahkan' }}</button>
+                                    @elseif($order->table_id && $order->table && $order->table->status === 'occupied')
+                                        <button wire:click="freeTable({{ $order->id }})" class="px-3 py-1.5 bg-red-700 text-white rounded text-xs font-semibold hover:bg-red-800 cursor-pointer">Bebaskan Meja</button>
                                     @elseif($order->status === 'completed')
-                                        <span class="bg-neutral-500 text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Completed</span>
-                                    @else
-                                        <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">{{ $order->status }}</span>
+                                        <span class="text-green-500 text-xs font-semibold">✔ Selesai</span>
+                                    @elseif($order->status === 'cancelled')
+                                        <span class="text-red-400 text-xs font-semibold">✖ Dibatalkan</span>
                                     @endif
-                                </td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-right">
-                                    <div class="flex justify-end items-center gap-1.5">
-                                        @if($order->status === 'pending')
-                                            <button wire:click="updateOrderStatus({{ $order->id }}, 'processing')" class="py-1.5 px-3 bg-[#6366f1] text-white rounded font-semibold hover:bg-[#4f46e5] shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Terima</button>
-                                            <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
-                                        @elseif($order->status === 'processing')
-                                            <button wire:click="updateOrderStatus({{ $order->id }}, 'preparing')" class="py-1.5 px-3 bg-[#3b82f6] text-white rounded font-semibold hover:bg-[#2563eb] shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Siapkan</button>
-                                            <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
-                                        @elseif($order->status === 'preparing')
-                                            <button wire:click="updateOrderStatus({{ $order->id }}, 'ready')" class="py-1.5 px-3 bg-coffee-success text-black rounded font-semibold hover:bg-coffee-success/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Siap</button>
-                                            <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
-                                        @elseif($order->status === 'ready')
-                                            <button wire:click="updateOrderStatus({{ $order->id }}, 'completed')" class="py-1.5 px-3 bg-neutral-600 text-white rounded font-semibold hover:bg-neutral-700 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Sajikan</button>
-                                        @elseif($order->table_id && $order->table && $order->table->status === 'occupied')
-                                            <button wire:click="freeTable({{ $order->id }})" class="py-1.5 px-3 bg-red-600 text-white rounded font-semibold hover:bg-red-700 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Bebaskan Meja</button>
-                                        @else
-                                            <span class="text-coffee-muted text-xs">-</span>
-                                        @endif
-                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-coffee-muted py-8">Tidak ada data pesanan yang sesuai filter.</td>
+                                <td colspan="8" class="text-center text-coffee-muted py-12 text-sm">Tidak ada data pesanan yang sesuai filter.</td>
                             </tr>
                         @endforelse
                     </tbody>
+
                 </table>
             </div>
 
@@ -479,7 +545,11 @@ new class extends Component
                             </div>
                             <div class="flex justify-between items-center">
                                 <span>Meja:</span>
-                                @if(!$order->table_id)
+                                @if($order->order_type === 'takeaway')
+                                    <span class="bg-[#1e1b4b] text-[#818cf8] border border-[#3730a3] px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Takeaway</span>
+                                @elseif($order->order_type === 'pickup')
+                                    <span class="bg-[#422006] text-[#fbbf24] border border-[#92400e] px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Pickup</span>
+                                @elseif(!$order->table_id)
                                     <select wire:change="assignTable({{ $order->id }}, $event.target.value)" class="bg-black border border-coffee-border rounded px-2 py-0.5 text-xs text-coffee-primary font-semibold focus:outline-none focus:border-coffee-primary cursor-pointer">
                                         <option value="">Pilih Meja</option>
                                         @foreach($availableOnlyTables as $tbl)
@@ -513,9 +583,13 @@ new class extends Component
                                 <button wire:click="updateOrderStatus({{ $order->id }}, 'ready')" class="py-1.5 px-3 bg-coffee-success text-black rounded font-semibold hover:bg-coffee-success/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Siap</button>
                                 <button @click="Swal.fire({title: 'Batalkan pesanan #{{ $order->id }}?', text: 'Tindakan ini tidak dapat diurungkan', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#3f3f46', confirmButtonText: 'Ya, Batalkan', cancelButtonText: 'Tutup', background: '#1c1917', color: '#fff'}).then((res) => { if(res.isConfirmed) $wire.updateOrderStatus({{ $order->id }}, 'cancelled') })" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Batal</button>
                             @elseif($order->status === 'ready')
-                                <button wire:click="updateOrderStatus({{ $order->id }}, 'completed')" class="py-1.5 px-3 bg-neutral-600 text-white rounded font-semibold hover:bg-neutral-700 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Sajikan</button>
+                                <button wire:click="updateOrderStatus({{ $order->id }}, 'completed')" class="py-1.5 px-3 bg-neutral-600 text-white rounded font-semibold hover:bg-neutral-700 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">{{ $order->order_type === 'dine_in' ? 'Sajikan' : 'Serahkan' }}</button>
                             @elseif($order->table_id && $order->table && $order->table->status === 'occupied')
                                 <button wire:click="freeTable({{ $order->id }})" class="py-1.5 px-3 bg-red-600 text-white rounded font-semibold hover:bg-red-700 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">Bebaskan Meja</button>
+                            @elseif($order->status === 'completed')
+                                <span class="text-green-500 text-xs font-semibold">✔ Selesai</span>
+                            @elseif($order->status === 'cancelled')
+                                <span class="text-red-400 text-xs font-semibold">✖ Dibatalkan</span>
                             @else
                                 <span class="text-coffee-muted text-xs">-</span>
                             @endif
@@ -550,8 +624,8 @@ new class extends Component
             </div>
 
             <!-- Desktop Table View -->
-            <div class="hidden lg:block overflow-x-auto w-full">
-                <table class="w-full border-collapse text-left text-sm">
+            <div class="hidden lg:block overflow-x-auto w-full no-scrollbar">
+                <table class="w-full border-collapse text-left text-sm" style="white-space: nowrap;">
                     <thead>
                         <tr>
                             <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">ID Booking</th>
@@ -568,42 +642,35 @@ new class extends Component
                             @php
                                 $status = strtolower($res->status);
                                 $resDate = $res->reservation_date;
-                                // Tandai Expired jika terlambat lebih dari 45 menit dari jadwal
                                 $isExpired = ($status === 'booked' || $status === 'pending') && $resDate->copy()->addMinutes(45)->isPast();
+                                $isResDone = in_array($status, ['completed', 'cancelled']) || $isExpired;
+                                $tableName = $res->table ? str_replace('JK-TABLE-', 'Meja ', $res->table->qr_code_ref) : null;
                             @endphp
-                            <tr class="hover:bg-coffee-primary/3">
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-semibold font-mono">
+                            <tr class="hover:bg-coffee-primary/3 {{ $isResDone ? 'opacity-50' : '' }}">
+                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-semibold font-mono whitespace-nowrap">
                                     JK-RES-{{ $res->id }}
                                 </td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
+                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text whitespace-nowrap">
                                     <div class="font-semibold">{{ $res->customer->name ?? 'Guest' }}</div>
                                 </td>
 
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-bold">
-                                    @if(!$res->table_id)
-                                        @if($status === 'booked')
-                                            <select wire:change="assignReservationTable({{ $res->id }}, $event.target.value)" class="bg-black/80 border border-coffee-border rounded-lg px-2 py-1 text-xs text-coffee-primary font-semibold focus:outline-none focus:border-coffee-primary cursor-pointer max-w-[120px]">
-                                                <option value="">Pilih Meja</option>
-                                                @foreach($availableOnlyTables as $availableTable)
-                                                    <option value="{{ $availableTable->id }}">{{ $availableTable->qr_code_ref }} (Cap: {{ $availableTable->capacity }})</option>
-                                                @endforeach
-                                            </select>
-                                        @else
-                                            <span class="text-xs text-coffee-muted italic">Meja belum ditentukan</span>
-                                        @endif
+                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-bold whitespace-nowrap">
+                                    @if($tableName)
+                                        {{-- Meja sudah diassign - tampilkan nama saja, tombol ganti di kolom Aksi --}}
+                                        <span class="font-semibold text-coffee-text whitespace-nowrap">{{ $tableName }}</span>
+                                    @elseif($status === 'booked' && !$isResDone)
+                                        <select wire:change="assignReservationTable({{ $res->id }}, $event.target.value)" class="bg-black/80 border border-coffee-border rounded-lg px-2 py-1 text-xs text-coffee-primary font-semibold focus:outline-none focus:border-coffee-primary cursor-pointer max-w-[130px]">
+                                            <option value="">Pilih Meja</option>
+                                            @foreach($availableOnlyTables as $availableTable)
+                                                <option value="{{ $availableTable->id }}">{{ str_replace('JK-TABLE-', 'Meja ', $availableTable->qr_code_ref) }} ({{ $availableTable->capacity }} org)</option>
+                                            @endforeach
+                                        </select>
                                     @else
-                                        <div class="flex items-center justify-start gap-1.5 text-coffee-text">
-                                            <span>{{ $res->table->qr_code_ref ?? "Meja {$res->table_id}" }}</span>
-                                            @if($status === 'booked')
-                                                <button wire:click="freeReservationTable({{ $res->id }})" title="Bebaskan Meja" class="p-1 rounded-full text-coffee-danger/70 hover:text-coffee-danger hover:bg-coffee-danger/10 transition-colors cursor-pointer">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                                </button>
-                                            @endif
-                                        </div>
+                                        <span class="text-coffee-muted text-xs italic">–</span>
                                     @endif
                                 </td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
-                                    <div class="flex items-center gap-1.5">
+                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text whitespace-nowrap">
+                                    <div class="flex items-center gap-1.5 flex-nowrap">
                                         <span>{{ $res->pax }} Orang</span>
                                         @if($res->pax > 4)
                                             <span class="text-[10px] text-amber-500 font-bold bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded" title="Kapasitas 1 meja standar adalah 4 orang. Staf harus menambahkan kursi ekstra atau menggabungkan meja.">
@@ -612,20 +679,22 @@ new class extends Component
                                         @endif
                                     </div>
                                 </td>
-                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-mono text-xs">
+                                <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-mono text-xs whitespace-nowrap">
                                     {{ $resDate->format('d M Y (H:i)') }}
                                 </td>
                                 <td class="py-4 px-4 border-b border-coffee-border/40">
                                     @if($isExpired)
-                                        <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Expired</span>
+                                        <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider whitespace-nowrap">Expired</span>
                                     @elseif($status === 'booked')
-                                        <span class="bg-[#f59e0b] text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Booked</span>
+                                        <span class="bg-[#f59e0b] text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider whitespace-nowrap">Menunggu Konfirmasi</span>
+                                    @elseif($status === 'confirmed')
+                                        <span class="bg-[#3b82f6] text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wider whitespace-nowrap">Terkonfirmasi ✓</span>
                                     @elseif($status === 'checked_in')
-                                        <span class="bg-coffee-success text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Tiba</span>
+                                        <span class="bg-coffee-success text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider whitespace-nowrap">Tiba</span>
                                     @elseif($status === 'completed')
-                                        <span class="bg-[#3b82f6] text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Selesai</span>
+                                        <span class="bg-neutral-500 text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wider whitespace-nowrap">Selesai</span>
                                     @else
-                                        <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider" @if($res->cancel_reason) title="Alasan: {{ $res->cancel_reason }}" @endif>
+                                        <span class="bg-coffee-danger text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider whitespace-nowrap" @if($res->cancel_reason) title="Alasan: {{ $res->cancel_reason }}" @endif>
                                             {{ $res->status }}
                                             @if($res->cancel_reason)
                                                 <svg class="w-3 h-3 inline-block ml-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -634,20 +703,38 @@ new class extends Component
                                     @endif
                                 </td>
                                 <td class="py-4 px-4 border-b border-coffee-border/40 text-right">
-                                    @if($status === 'booked')
-                                        <button wire:click="confirmArrival({{ $res->id }})" class="py-1.5 px-3 bg-coffee-success text-black rounded font-semibold hover:bg-coffee-success/80 shadow-none border-none transition-all text-xs cursor-pointer mr-1">
-                                            Tiba
-                                        </button>
-                                        <button wire:click="openCancelModal({{ $res->id }})" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">
-                                            Batal
-                                        </button>
-                                    @elseif($status === 'checked_in')
-                                        <button wire:click="completeReservation({{ $res->id }})" class="py-1.5 px-3 bg-[#3b82f6] text-white rounded font-semibold hover:bg-[#2563eb] shadow-none border-none transition-all text-xs cursor-pointer disabled:opacity-50" wire:loading.attr="disabled">
-                                            Selesai & Bebaskan Meja
-                                        </button>
-                                    @else
-                                        <span class="text-coffee-muted text-xs">-</span>
-                                    @endif
+                                    <div class="flex items-center justify-end gap-2 flex-nowrap">
+                                        @if($status === 'booked')
+                                            @if($tableName)
+                                                <button wire:click="freeReservationTable({{ $res->id }})" class="py-1.5 px-3 bg-neutral-700 text-white rounded font-semibold hover:bg-neutral-600 text-xs cursor-pointer whitespace-nowrap shrink-0 flex items-center">
+                                                    Ganti Meja
+                                                </button>
+                                            @endif
+                                            <button wire:click="confirmReservation({{ $res->id }})" class="py-1.5 px-3 bg-[#6366f1] text-white rounded font-semibold hover:bg-[#4f46e5] text-xs cursor-pointer whitespace-nowrap shrink-0 flex items-center">
+                                                Konfirmasi
+                                            </button>
+                                            <button wire:click="openCancelModal({{ $res->id }})" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 text-xs cursor-pointer whitespace-nowrap shrink-0 flex items-center" wire:loading.attr="disabled">
+                                                Batal
+                                            </button>
+                                        @elseif($status === 'confirmed')
+                                            <button wire:click="confirmArrival({{ $res->id }})" class="py-1.5 px-3 bg-coffee-success text-black rounded font-semibold hover:bg-coffee-success/80 text-xs cursor-pointer whitespace-nowrap">
+                                                Tiba
+                                            </button>
+                                            <button wire:click="openCancelModal({{ $res->id }})" class="py-1.5 px-3 bg-coffee-danger text-black rounded font-semibold hover:bg-coffee-danger/80 text-xs cursor-pointer whitespace-nowrap" wire:loading.attr="disabled">
+                                                Batal
+                                            </button>
+                                        @elseif($status === 'checked_in')
+                                            <button wire:click="completeReservation({{ $res->id }})" class="py-1.5 px-3 bg-[#3b82f6] text-white rounded font-semibold hover:bg-[#2563eb] text-xs cursor-pointer whitespace-nowrap">
+                                                Selesai & Bebaskan Meja
+                                            </button>
+                                        @elseif($status === 'completed')
+                                            <span class="text-green-500 text-xs font-semibold whitespace-nowrap">✔ Selesai</span>
+                                        @elseif($status === 'cancelled')
+                                            <span class="text-red-400 text-xs font-semibold whitespace-nowrap">✖ Dibatalkan</span>
+                                        @elseif($isExpired)
+                                            <span class="text-coffee-muted text-xs italic whitespace-nowrap">Hangus</span>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty

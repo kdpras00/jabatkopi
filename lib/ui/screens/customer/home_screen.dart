@@ -22,6 +22,7 @@ import 'order_tracking_screen.dart';
 import 'edit_profile_screen.dart';
 import 'security_screen.dart';
 import 'payment_instruction_screen.dart';
+import 'waiting_list_screen.dart';
 import 'dart:convert';
 
 class CustomerHomeScreen extends StatefulWidget {
@@ -197,7 +198,53 @@ class _MenuCatalogTabState extends State<MenuCatalogTab> {
                     ),
                     actions: [
                       IconButton(
+                        icon: const Icon(Icons.people_alt_outlined, color: AppColors.caramelGold),
+                        tooltip: 'Daftar Tunggu',
+                        onPressed: () async {
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.caramelGold)),
+                          );
+
+                          try {
+                            // Check table availability
+                            final response = await ApiClient().get('/tables');
+                            Navigator.pop(context); // Dismiss loading
+                            
+                            final tables = response['data'] as List;
+                            final hasAvailable = tables.any((t) => t['status'] == 'available');
+
+                            if (hasAvailable) {
+                              // If tables are available, show alert and block waiting list
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('⚠️ Masih ada meja kosong! Anda bisa langsung pesan Dine In tanpa perlu antre.'),
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                );
+                              }
+                            } else {
+                              // Cafe is full, allow joining waiting list
+                              if (context.mounted) {
+                                await Navigator.push(context, JkPageRoute(page: const WaitingListScreen()));
+                              }
+                            }
+                          } catch (e) {
+                            Navigator.pop(context);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Gagal mengecek status meja.'), backgroundColor: Colors.red),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                      IconButton(
                         icon: const Icon(Icons.event_seat_outlined, color: AppColors.caramelGold),
+                        tooltip: 'Reservasi Meja',
                         onPressed: () async {
                           await Navigator.push(context, JkPageRoute(page: const CustomerReservationScreen()));
                         },
@@ -624,19 +671,23 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
 
                     Color statusColor;
                     switch (status) {
-                      case 'booked': statusColor = Colors.orange; break;
+                      case 'booked':     statusColor = Colors.orange; break;
+                      case 'confirmed':  statusColor = Colors.blue; break;
                       case 'checked_in': statusColor = Colors.green; break;
-                      case 'completed': statusColor = AppColors.caramelGold; break;
-                      case 'cancelled': statusColor = Colors.redAccent; break;
+                      case 'completed':  statusColor = AppColors.caramelGold; break;
+                      case 'cancelled':  statusColor = Colors.redAccent; break;
                       default: statusColor = Colors.grey;
                     }
 
                     String statusLabel;
                     switch (status) {
-                      case 'booked': statusLabel = 'Terkonfirmasi'; break;
+                      // 'booked' = sudah dibuat, BELUM dikonfirmasi admin
+                      case 'booked':     statusLabel = 'Menunggu Konfirmasi'; break;
+                      // 'confirmed' = admin sudah setujui
+                      case 'confirmed':  statusLabel = 'Terkonfirmasi ✓'; break;
                       case 'checked_in': statusLabel = 'Sudah Hadir'; break;
-                      case 'completed': statusLabel = 'Selesai'; break;
-                      case 'cancelled': statusLabel = 'Dibatalkan'; break;
+                      case 'completed':  statusLabel = 'Selesai'; break;
+                      case 'cancelled':  statusLabel = 'Dibatalkan'; break;
                       default: statusLabel = status;
                     }
 
@@ -648,8 +699,16 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                       friendlyDate = res['reservation_date'];
                     }
 
-                    final cardTitle = tableId > 0 ? 'Reservasi Meja $tableId' : 'Menunggu Pilihan Meja';
+                    String cardTitle;
+                    if (tableId > 0) {
+                      cardTitle = 'Reservasi Meja $tableId';
+                    } else if (status == 'booked') {
+                      cardTitle = 'Menunggu Konfirmasi Admin';
+                    } else {
+                      cardTitle = 'Menunggu Pilihan Meja';
+                    }
 
+                    // Batalkan hanya boleh selama masih 'booked' (belum dikonfirmasi admin)
                     final canCancel = status == 'booked';
 
                     return Container(
@@ -717,7 +776,7 @@ class _ReservationHistoryTabState extends State<ReservationHistoryTab> {
                                         if (canCancel) ...[
                                           const SizedBox(height: 12),
                                           GestureDetector(
-                                            onTap: () => _cancelReservation(res['id'] as int),
+                                            onTap: () => _cancelReservation(int.tryParse(res['id']?.toString() ?? '0') ?? 0),
                                             child: const Text(
                                               'Batalkan Reservasi',
                                               style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),

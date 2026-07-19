@@ -9,7 +9,25 @@ class TableController extends Controller
 {
     public function index()
     {
-        $tables = DB::table('tables')->whereNull('deleted_at')->orderBy('id')->get();
+        $tables = DB::table('tables')
+            ->whereNull('deleted_at')
+            ->orderBy('id')
+            ->get();
+
+        // Sertakan jumlah order aktif per meja agar Flutter bisa tampilkan
+        // informasi real (ada pesanan aktif atau tidak) tanpa bergantung pada field `status`.
+        $activeOrderCounts = DB::table('orders')
+            ->whereIn('status', ['pending', 'processing', 'preparing', 'ready'])
+            ->whereNotNull('table_id')
+            ->groupBy('table_id')
+            ->select('table_id', DB::raw('count(*) as active_order_count'))
+            ->pluck('active_order_count', 'table_id');
+
+        $tables = $tables->map(function ($table) use ($activeOrderCounts) {
+            $table->active_order_count = $activeOrderCounts->get($table->id, 0);
+            return $table;
+        });
+
         return response()->json(['status' => 200, 'message' => 'Success', 'data' => $tables]);
     }
 

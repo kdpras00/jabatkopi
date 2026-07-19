@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\ReservationController;
+use App\Http\Controllers\Api\WaitingListController;
 
 // Rate-limited: max 10 requests per menit per IP untuk mencegah brute-force & spam
 Route::middleware(['throttle:10,1'])->group(function () {
@@ -18,6 +19,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::put('/profile/password', [AuthController::class, 'updatePassword']);
+    // Endpoint untuk update FCM token dari Flutter (dipanggil setiap login)
+    Route::put('/profile/fcm-token', [AuthController::class, 'updateFcmToken']);
+});
+
+// --- WAITING LIST (Customer) ---
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/waiting-list', [WaitingListController::class, 'join']);
+    Route::get('/waiting-list/my', [WaitingListController::class, 'myStatus']);
+    Route::put('/waiting-list/{id}/cancel', [WaitingListController::class, 'cancelMy']);
 });
 
 Route::get('/menus', [MenuController::class, 'index']);
@@ -63,6 +73,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/admin/tables/with-reservations', [TableController::class, 'getWithReservations']);
     Route::get('/admin/tables', [TableController::class, 'index']);
     Route::put('/admin/tables/{id}/status', [TableController::class, 'updateStatus']);
+
+    // Waiting List (Admin)
+    Route::get('/admin/waiting-list', [WaitingListController::class, 'adminIndex']);
+    Route::put('/admin/waiting-list/{id}/notify', [WaitingListController::class, 'notify']);
+    Route::put('/admin/waiting-list/{id}/seat', [WaitingListController::class, 'seat']);
+    Route::put('/admin/waiting-list/{id}/expire', [WaitingListController::class, 'expire']);
     
     // Reservations
     Route::get('/admin/reservations', [ReservationController::class, 'adminIndex']);

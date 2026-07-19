@@ -251,6 +251,30 @@ new class extends Component
         $this->dispatch('toast', text: 'Item menu berhasil dihapus.', type: 'success');
     }
 
+    // --- WAITING LIST LOGIC ---
+    public function notifyWaitingList($id): void
+    {
+        $response = app(\App\Http\Controllers\Api\WaitingListController::class)->notify($id);
+        $resData = json_decode($response->getContent(), true);
+        if (($resData['status'] ?? 0) == 200) {
+             $this->dispatch('toast', text: 'Customer berhasil dipanggil & dinotifikasi.', type: 'success');
+        } else {
+             $this->dispatch('toast', text: 'Gagal: ' . ($resData['message'] ?? 'Error'), type: 'error');
+        }
+    }
+
+    public function seatWaitingList($id): void
+    {
+        app(\App\Http\Controllers\Api\WaitingListController::class)->seat($id);
+        $this->dispatch('toast', text: 'Customer ditandai sudah duduk di meja.', type: 'success');
+    }
+
+    public function cancelWaitingList($id): void
+    {
+        app(\App\Http\Controllers\Api\WaitingListController::class)->expire($id);
+        $this->dispatch('toast', text: 'Antrean dibatalkan / Expired.', type: 'success');
+    }
+
     public function render()
     {
         $allUsers = User::with('roles')->get();
@@ -285,6 +309,12 @@ new class extends Component
             'tables' => $tables,
             'menus' => $menus,
             'totalRevenue' => $totalRevenue,
+            'waitingLists' => \Illuminate\Support\Facades\DB::table('waiting_list')
+                                ->select('waiting_list.*', 'users.name as customer_name')
+                                ->leftJoin('users', 'waiting_list.customer_id', '=', 'users.id')
+                                ->whereIn('waiting_list.status', ['waiting', 'notified'])
+                                ->orderBy('waiting_list.queue_number', 'asc')
+                                ->get(),
         ]);
     }
 };
@@ -430,9 +460,88 @@ new class extends Component
     <!-- KELOLA MEJA TAB -->
     @if($activeTab === 'tables')
         @if(!$showForm)
-            <!-- List View -->
+            <!-- DAFTAR TUNGGU (WAITING LIST) SECTION -->
             <div class="bg-coffee-panel backdrop-blur-md border border-coffee-border rounded-2xl p-8 shadow-2xl mb-8">
-                <div class="flex justify-end mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg text-coffee-text font-semibold flex items-center gap-2">
+                        <svg class="w-5 h-5 text-coffee-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        Daftar Tunggu Pelanggan
+                    </h2>
+                    <span class="bg-coffee-primary text-black px-3 py-1 rounded-full text-xs font-bold">{{ count($waitingLists) }} Antrean Aktif</span>
+                </div>
+
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full border-collapse text-left text-sm">
+                        <thead>
+                            <tr>
+                                <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">No. Antrean</th>
+                                <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Nama Pemesan</th>
+                                <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Jumlah Orang</th>
+                                <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider">Status</th>
+                                <th class="py-3 px-4 text-coffee-primary border-b-2 border-coffee-border font-semibold uppercase text-xs tracking-wider text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($waitingLists as $wl)
+                                <tr class="hover:bg-coffee-primary/3">
+                                    <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-bold text-lg">#{{ $wl->queue_number }}</td>
+                                    <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
+                                        <div class="font-semibold">{{ $wl->customer_name ?? 'Guest' }}</div>
+                                        @if($wl->notes)
+                                            <div class="text-xs text-coffee-muted mt-1">Catatan: {{ $wl->notes }}</div>
+                                        @endif
+                                    </td>
+                                    <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text font-medium">{{ $wl->party_size }} Orang</td>
+                                    <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text">
+                                        @if($wl->status === 'waiting')
+                                            <span class="bg-amber-500 text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Menunggu</span>
+                                        @elseif($wl->status === 'notified')
+                                            <span class="bg-coffee-success text-black px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Dipanggil ✔</span>
+                                        @elseif($wl->status === 'seated')
+                                            <span class="bg-blue-500 text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Sudah Duduk 🪑</span>
+                                        @elseif($wl->status === 'expired')
+                                            <span class="bg-red-700 text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Tidak Datang ⏰</span>
+                                        @elseif($wl->status === 'cancelled')
+                                            <span class="bg-neutral-600 text-white px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Dibatalkan</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-4 px-4 border-b border-coffee-border/40 text-coffee-text text-right">
+                                        @if($wl->status === 'waiting')
+                                            {{-- Belum dipanggil: bisa Panggil atau Batalkan --}}
+                                            <button wire:click="notifyWaitingList({{ $wl->id }})" class="py-1.5 px-3 bg-coffee-primary text-black rounded font-bold hover:bg-coffee-primary-hover transition-all text-xs mr-1.5 cursor-pointer">
+                                                Panggil (FCM)
+                                            </button>
+                                            <button onclick="confirmDelete('Batalkan Antrean?', 'Yakin batal?', () => @this.cancelWaitingList({{ $wl->id }}))" class="py-1.5 px-3 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs cursor-pointer">
+                                                Batal
+                                            </button>
+                                        @elseif($wl->status === 'notified')
+                                            {{-- Sudah dipanggil: konfirmasi duduk atau tandai tidak datang --}}
+                                            <button wire:click="seatWaitingList({{ $wl->id }})" class="py-1.5 px-3 bg-blue-500 text-white rounded font-bold hover:bg-blue-600 transition-all text-xs mr-1.5 cursor-pointer">
+                                                ✔ Sudah Duduk
+                                            </button>
+                                            <button onclick="confirmDelete('Pelanggan tidak datang?', 'Antrean akan ditandai hangus.', () => @this.cancelWaitingList({{ $wl->id }}))" class="py-1.5 px-3 bg-neutral-600 text-white rounded font-bold hover:bg-neutral-700 transition-all text-xs cursor-pointer">
+                                                Tidak Datang
+                                            </button>
+                                        @else
+                                            {{-- Status final (seated, expired, cancelled) - tidak ada aksi --}}
+                                            <span class="text-coffee-muted text-xs italic">Selesai</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center text-coffee-muted py-8">Belum ada pelanggan dalam daftar tunggu.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- List View (Daftar Meja) -->
+            <div class="bg-coffee-panel backdrop-blur-md border border-coffee-border rounded-2xl p-8 shadow-2xl mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg text-coffee-text font-semibold">Daftar Meja</h2>
                     <button wire:click="openForm" class="py-2.5 px-5 bg-coffee-primary text-black font-bold text-sm rounded-lg shadow-md hover:bg-coffee-primary-hover cursor-pointer transition-all">
                         Tambah Meja
                     </button>
