@@ -128,7 +128,7 @@ class OrderController extends Controller
             
             if ($request->payment_method !== 'cash') {
                 $authString = base64_encode(config('services.midtrans.server_key') . ':');
-                $orderIdString = 'JK-ORDER-' . $result;
+                $orderIdString = 'JK-ORDER-' . $result . '-' . time();
                 $grossAmount = (int)$totalAmount;
 
                 $payload = [
@@ -203,6 +203,12 @@ class OrderController extends Controller
                 if ($response->successful()) {
                     $resData = $response->json();
                     
+                    if (isset($resData['status_code']) && !in_array($resData['status_code'], ['200', '201', '202'])) {
+                        throw new \Exception('Midtrans Error: ' . ($resData['status_message'] ?? 'Unknown error'));
+                    }
+                    
+                    $paymentDetails['midtrans_order_id'] = $orderIdString;
+
                     $transactionStatus = $resData['transaction_status'] ?? 'pending';
                     if (in_array($transactionStatus, ['deny', 'cancel', 'expire'])) {
                         throw new \Exception('Payment was denied by Midtrans: ' . ($resData['status_message'] ?? ''));
@@ -343,13 +349,16 @@ class OrderController extends Controller
 
         if ($order->status === 'pending' || $order->payment_method === 'BANK TRANSFER' || $order->payment_method === 'bank_transfer') {
             try {
+                $paymentDetails = json_decode($order->payment_details, true) ?? [];
+                $midtransOrderId = $paymentDetails['midtrans_order_id'] ?? ('JK-ORDER-' . $id);
+                
                 $authString = base64_encode(config('services.midtrans.server_key') . ':');
                 $isProduction = config('services.midtrans.is_production', false);
                 $midtransApiUrl = $isProduction ? 'https://api.midtrans.com/v2/' : 'https://api.sandbox.midtrans.com/v2/';
                 $response = Http::withHeaders([
                     'Authorization' => 'Basic ' . $authString,
                     'Accept' => 'application/json',
-                ])->get($midtransApiUrl . 'JK-ORDER-' . $id . '/status');
+                ])->get($midtransApiUrl . $midtransOrderId . '/status');
 
                 if ($response->successful()) {
                     $resData = $response->json();
@@ -360,7 +369,6 @@ class OrderController extends Controller
                         $paymentType = 'bank_transfer_' . $resData['va_numbers'][0]['bank'];
                     }
 
-                    $paymentDetails = json_decode($order->payment_details, true) ?? [];
                     $detailsUpdated = false;
 
                     if (empty($paymentDetails)) {
