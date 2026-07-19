@@ -149,6 +149,21 @@ class _CustomerCheckoutScreenState extends State<CustomerCheckoutScreen> {
       }
 
       if (mounted) {
+        // CEK JIKA MIDTRANS TIDAK MENGEMBALIKAN VA NUMBER (KEMUNGKINAN DITOLAK)
+        if (_selectedMethod != 'cash' && paymentDetails.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ERROR: Midtrans menolak pembayaran atau kredensial Midtrans di server salah. Silakan cek dashboard Midtrans Anda.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 10),
+            ),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+
         if (_selectedMethod == 'cash') {
           Navigator.pushReplacement(
             context,
